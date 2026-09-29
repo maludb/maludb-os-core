@@ -32,7 +32,7 @@ export default function ChatTab({
 
   const list = (
     <ConversationList conversations={chat.conversations} openId={open?.id ?? null} archivedView={chat.archived_view}
-                      link={link} timeZone={timeZone} />
+                      blank={open === null && !chat.archived_view} link={link} timeZone={timeZone} />
   );
 
   return (
@@ -46,6 +46,11 @@ export default function ChatTab({
       </div>
 
       <div className="col-lg-8 order-1 order-lg-2">
+        {open === null && (
+          <div className="mb-2" id="agent-chat-header">
+            <h6 className="fw-bold mb-0">New conversation <span className="badge bg-soft-primary text-primary ms-1">not started</span></h6>
+          </div>
+        )}
         {open !== null && (
           <div className="d-flex flex-wrap align-items-center gap-2 mb-2" id="agent-chat-header">
             <h6 className="fw-bold mb-0 me-auto">{open.title || "Untitled"}{open.archived && <span className="badge bg-soft-secondary text-secondary ms-2">archived</span>}</h6>
@@ -62,7 +67,8 @@ export default function ChatTab({
           </div>
         )}
 
-        <ChatPane agentId={agentId} agentName={agentName} conversationId={open?.id ?? null}
+        {/* Keyed by conversation: opening another, or a new one, starts the message box and the poll afresh. */}
+        <ChatPane key={open?.id ?? "new"} agentId={agentId} agentName={agentName} conversationId={open?.id ?? null}
                   canSend={chat.can_send} reason={chat.reason} messageMax={chat.message_max}
                   running={runningTurn ? { runId: runningTurn.run_id, said: runningTurn.said } : null}>
           {chat.turns.length === 0 ? (
@@ -76,19 +82,27 @@ export default function ChatTab({
   );
 }
 
-function ConversationList({ conversations, openId, archivedView, link, timeZone }: {
-  conversations: ChatConversation[]; openId: number | null; archivedView: boolean; link: (extra: string) => string; timeZone: string;
+function ConversationList({ conversations, openId, archivedView, blank, link, timeZone }: {
+  conversations: ChatConversation[]; openId: number | null; archivedView: boolean; blank: boolean; link: (extra: string) => string; timeZone: string;
 }) {
   return (
     <div id="agent-chat-conversations">
       <div className="d-flex align-items-center mb-2">
         <h6 className="fw-bold mb-0 me-auto">{archivedView ? "Archived" : "Conversations"}</h6>
-        <Link href={link("&c=new")} className="btn btn-sm btn-primary" id="agent-chat-new"><i className="feather-plus me-1"></i>New</Link>
+        {blank
+          ? <span className="btn btn-sm btn-primary disabled" id="agent-chat-new" role="link" aria-disabled="true" title="You are already in a new conversation"><i className="feather-plus me-1"></i>New</span>
+          : <Link href={link("&c=new")} className="btn btn-sm btn-primary" id="agent-chat-new"><i className="feather-plus me-1"></i>New</Link>}
       </div>
-      {conversations.length === 0 ? (
+      {conversations.length === 0 && !blank ? (
         <p className="text-muted fs-13 mb-2">{archivedView ? "Nothing archived." : "No conversations yet."}</p>
       ) : (
         <ul className="list-group mb-2">
+          {blank && (
+            <li className="list-group-item active px-3 py-2" id="agent-chat-conversation-new" aria-current="true">
+              <div className="fw-semibold fs-13">New conversation</div>
+              <div className="fs-11">Send a message to begin</div>
+            </li>
+          )}
           {conversations.map((c) => (
             <li key={c.id} className={`list-group-item p-0${c.id === openId ? " active" : ""}`}>
               <Link href={link(`&c=${c.id}${archivedView ? "&archived=1" : ""}`)} className={`d-block px-3 py-2 text-decoration-none${c.id === openId ? " text-white" : ""}`} id={`agent-chat-conversation-${c.id}`}>
