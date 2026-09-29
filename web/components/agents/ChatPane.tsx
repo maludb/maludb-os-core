@@ -105,7 +105,7 @@ export default function ChatPane({
 
   return (
     <div className="d-flex flex-column" id="agent-chat-pane">
-      <div ref={scroller} className="border rounded p-3 mb-3 bg-light" id="agent-chat-thread" style={{ minHeight: "16rem", maxHeight: "60vh", overflowY: "auto" }}>
+      <div ref={scroller} className="border rounded p-3 mb-3 bg-white" id="agent-chat-thread" style={{ minHeight: "16rem", maxHeight: "60vh", overflowY: "auto" }}>
         {children}
         {runId !== null && (
           <div className="d-flex align-items-start gap-2 mb-2" id="agent-chat-working" role="status" aria-live="polite">
@@ -129,7 +129,7 @@ export default function ChatPane({
         <label htmlFor="agent-chat-input" className="visually-hidden">Message {agentName}</label>
         <textarea id="agent-chat-input" className="form-control mb-2" rows={3} value={text} maxLength={messageMax}
                   placeholder={canSend ? `Message ${agentName} — ask a question or give a task` : "Chat is not available for this agent right now"}
-                  disabled={disabled} aria-busy={sending}
+                  disabled={disabled} aria-busy={sending} autoFocus={canSend && runId === null}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); } }} />
         <div className="d-flex align-items-center gap-3">

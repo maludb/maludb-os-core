@@ -6,6 +6,7 @@ import { StateBadge, money } from "@/components/aiops/AiOpsNav";
 import { formatTs } from "@/lib/format";
 import { withBack } from "@/lib/routes";
 import type { AgentChat, ChatConversation, ChatTurn } from "@/lib/schemas/agents";
+import ChatFocusButton from "./ChatFocusButton";
 import ChatPane from "./ChatPane";
 
 const seconds = (t: ChatTurn): string | null => {
@@ -73,7 +74,7 @@ export default function ChatTab({
                   running={runningTurn ? { runId: runningTurn.run_id, said: runningTurn.said } : null}>
           {chat.turns.length === 0 ? (
             <p className="text-muted mb-0" id="agent-chat-empty">
-              {open === null ? `Start a conversation with ${agentName}. Ask a question, or give it a task — it works with its own tools and says what it did.` : "No turns yet."}
+              {open === null ? <>Start a conversation with {agentName}: ask a question, or give it a task — it works with its own tools and says what it did. <strong>Type your message in the box below.</strong> <i className="feather-arrow-down ms-1"></i></> : "No turns yet."}
             </p>
           ) : chat.turns.map((t) => <Turn key={t.run_id} turn={t} agentName={agentName} timeZone={timeZone} here={here} />)}
         </ChatPane>
@@ -90,7 +91,7 @@ function ConversationList({ conversations, openId, archivedView, blank, link, ti
       <div className="d-flex align-items-center mb-2">
         <h6 className="fw-bold mb-0 me-auto">{archivedView ? "Archived" : "Conversations"}</h6>
         {blank
-          ? <span className="btn btn-sm btn-primary disabled" id="agent-chat-new" role="link" aria-disabled="true" title="You are already in a new conversation"><i className="feather-plus me-1"></i>New</span>
+          ? <ChatFocusButton id="agent-chat-new"><i className="feather-plus me-1"></i>New</ChatFocusButton>
           : <Link href={link("&c=new")} className="btn btn-sm btn-primary" id="agent-chat-new"><i className="feather-plus me-1"></i>New</Link>}
       </div>
       {conversations.length === 0 && !blank ? (
@@ -127,7 +128,7 @@ function Turn({ turn: t, agentName, timeZone, here }: { turn: ChatTurn; agentNam
       </div>
       {t.status !== "running" && (
         <div className="d-flex justify-content-start">
-          <div className="rounded px-3 py-2 bg-white border" style={{ maxWidth: "92%", overflowWrap: "anywhere" }}>
+          <div className="rounded px-3 py-2 bg-light border" style={{ maxWidth: "92%", overflowWrap: "anywhere" }}>
             <div className="fs-12 fw-semibold text-muted mb-1">{agentName}{t.started_at ? ` · ${formatTs(t.started_at, timeZone, false)}` : ""}</div>
             {t.reply !== null && t.reply !== "" && <div className="agent-chat-reply"><ReactMarkdown skipHtml>{t.reply}</ReactMarkdown></div>}
             {t.status === "failed" && <div className="text-danger fs-13">{t.error ?? "The run failed."}</div>}
