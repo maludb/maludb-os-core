@@ -15,7 +15,7 @@ from pathlib import Path
 
 os.environ.setdefault("RUNNER_ENV_FILE", "/nonexistent")
 from agent_runner import hermes_render, pricing, run_token          # noqa: E402
-from agent_runner import config                                       # noqa: E402
+from agent_runner import claude_launch, config                        # noqa: E402
 from agent_runner.ledger_proxy import _Assembler, _upstream          # noqa: E402
 
 KEY = "k" * 40
@@ -365,3 +365,30 @@ class SubscriptionAuth(unittest.TestCase):
         model = {"price_input_per_mtok": 2, "price_output_per_mtok": 10, "price_cache_read_per_mtok": Decimal("0.2"), "price_cache_write_per_mtok": Decimal("2.5")}
         tokens = {"input": 2, "output": 4, "cache_read": 3289, "cache_write": 5308}
         self.assertEqual(pricing.cost(tokens, model), Decimal("0.013972"), "list price, whatever it is billed to")
+
+
+class ClaudeLaunch(unittest.TestCase):
+    """The two ways the Claude Code CLI is launched (agent_runner/claude_launch.py); the conformance suite proves the fences."""
+
+    PROXY, KEY = "http://127.0.0.1:8816/anthropic", "run.7.9999999999.abc"
+
+    def test_an_api_key_model_stays_bare_and_authenticates_with_the_proxy_key_as_a_key(self):
+        model = {"auth_mode": "api_key"}
+        self.assertEqual(claude_launch.fence_flags(model), ["--bare"])
+        env = claude_launch.auth_env(model, self.KEY, self.PROXY)
+        self.assertEqual(env, {"ANTHROPIC_BASE_URL": self.PROXY, "ANTHROPIC_API_KEY": self.KEY})
+
+    def test_a_subscription_model_is_not_bare_and_is_fenced_by_flag_and_environment(self):
+        model = {"auth_mode": "claude_subscription"}
+        flags = claude_launch.fence_flags(model)
+        self.assertNotIn("--bare", flags)
+        self.assertEqual(flags[:2], ["--setting-sources", ""], "no settings source is loaded")
+        env = claude_launch.auth_env(model, self.KEY, self.PROXY)
+        self.assertEqual(env["CLAUDE_CODE_OAUTH_TOKEN"], self.KEY, "the credential is the run's proxy key, never a real token")
+        self.assertNotIn("ANTHROPIC_API_KEY", env)
+        for name in ("CLAUDE_CODE_DISABLE_AUTO_MEMORY", "CLAUDE_CODE_DISABLE_CLAUDE_MDS", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"):
+            self.assertEqual(env[name], "1")
+
+    def test_a_missing_model_is_api_key(self):
+        self.assertFalse(claude_launch.is_subscription({}))
+        self.assertFalse(claude_launch.is_subscription(None))

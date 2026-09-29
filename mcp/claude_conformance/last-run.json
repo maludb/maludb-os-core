@@ -1,6 +1,6 @@
 {
  "version": "2.1.278 (Claude Code)",
- "at": "2026-09-20T21:41:41+0000",
+ "at": "2026-09-29T16:12:38+0000",
  "results": [
   {
    "status": "PASS",
@@ -70,12 +70,52 @@
   {
    "status": "PASS",
    "check": "terminate() stops a run within 5s",
-   "detail": "0.0s, orphans=none"
+   "detail": "0.1s, orphans=none"
+  },
+  {
+   "status": "PASS",
+   "check": "S0 control: a plain default CLI (no --bare, --restricted or fences) DOES pick the planted files up (so S2 and S3 mean something)",
+   "detail": "markers reaching the model: ['AMBIENT-CONFIGMD-72', 'AMBIENT-PARENTMD-74', 'AMBIENT-PROJECTMD-73']; hooks that ran: ['hook-config-ran', 'hook-local-ran', 'hook-project-ran']"
+  },
+  {
+   "status": "PASS",
+   "check": "S1 a subscription-mode run reaches the proxy URL and completes",
+   "detail": "rc=0, 2 upstream call(s)"
+  },
+  {
+   "status": "PASS",
+   "check": "S1 the credential sent is the run's key as a bearer \u2014 never the planted login, never a real token",
+   "detail": "seen: ['Bearer proxy-key-S\u2026']"
+  },
+  {
+   "status": "PASS",
+   "check": "S2 no ambient CLAUDE.md, agent, skill, command or settings text reaches the model",
+   "detail": "none of the planted markers were sent"
+  },
+  {
+   "status": "PASS",
+   "check": "S3 no ambient hook ran (user, config dir, project, local settings)",
+   "detail": "no hook fired"
+  },
+  {
+   "status": "PASS",
+   "check": "S4 only the granted MCP server's tools exist (a planted project .mcp.json is ignored)",
+   "detail": "offered: ['mcp__records__echo_record', 'mcp__records__forbidden_tool']"
+  },
+  {
+   "status": "PASS",
+   "check": "S4 no built-in code, file or shell tool is offered",
+   "detail": "offered: ['mcp__records__echo_record', 'mcp__records__forbidden_tool']"
+  },
+  {
+   "status": "PASS",
+   "check": "S5 nothing else was contacted or written (no ambient MCP call, no memory files)",
+   "detail": "ambient mcp rows=0, memory files=none"
   },
   {
    "status": "INFO",
    "check": "peak RSS of a scripted run",
-   "detail": "256 MB (MemoryMax must clear this; Hermes runs at 1500M)"
+   "detail": "255 MB (MemoryMax must clear this; Hermes runs at 1500M)"
   }
  ]
 }

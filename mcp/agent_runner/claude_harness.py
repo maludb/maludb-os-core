@@ -21,7 +21,7 @@ from pathlib import Path
 
 import httpx
 
-from . import claude_render, config, memory
+from . import claude_launch, claude_render, config, memory
 from .harness import Harness, PreparedRun, RunContext, RunOutcome
 
 log = logging.getLogger("agent_runner.claude")
@@ -70,10 +70,12 @@ class ClaudeAgentHarness(Harness):
 
         # A scrubbed environment: the two per-run credentials exist here and nowhere on disk. The
         # CLI's Anthropic base URL is the ledger proxy, so every model call is ledgered before it
-        # leaves the box — and `--bare` means an API key is the ONLY way it can authenticate.
+        # leaves the box — and `--bare` means an API key is the ONLY way it can authenticate. (A model billed to the
+        # owner's Claude subscription cannot be `--bare`: claude_launch fences it explicitly instead, and the
+        # credential in this environment is STILL only the run's proxy key — the proxy holds the real token.)
         env = {"PATH": "/usr/bin:/bin", "HOME": str(agent_dir / "home"), "LANG": "C.UTF-8",
                "CLAUDE_CONFIG_DIR": str(agent_dir / "config"),
-               "ANTHROPIC_BASE_URL": proxy, "ANTHROPIC_API_KEY": ctx.proxy_key,
+               **claude_launch.auth_env(model, ctx.proxy_key, proxy),
                "BOS_RUN_TOKEN": ctx.run_token, "BOS_PROXY_KEY": ctx.proxy_key,
                "BOS_RUN_ID": str(ctx.run_id), "BOS_RUNNER_URL": f"http://127.0.0.1:{config.API_PORT}",
                "DISABLE_TELEMETRY": "1", "DISABLE_ERROR_REPORTING": "1", "DISABLE_AUTOUPDATER": "1"}
@@ -82,7 +84,7 @@ class ClaudeAgentHarness(Harness):
         # agent_runs keeps the ORIGINAL instructions; the ledger payload shows what was sent.
         asked = memory.instructions_with_recall(ctx.instructions, ctx.memory.get("recalled") or [])
         tools = prepared.detail["tools"]
-        command = [config.CLAUDE_BIN, "--bare", "--print", "--output-format", "stream-json", "--verbose",
+        command = [config.CLAUDE_BIN, *claude_launch.fence_flags(model), "--print", "--output-format", "stream-json", "--verbose",
                    "--model", model["provider_model_id"],
                    "--system-prompt-file", str(agent_dir / "claude" / "SYSTEM.md"),
                    "--mcp-config", str(agent_dir / "claude" / "mcp.json"), "--strict-mcp-config",
