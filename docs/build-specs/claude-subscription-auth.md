@@ -1,8 +1,33 @@
 # Claude subscription login for agents (Max plan) — owner's own install only
 
-Status: **DRAFT — decision taken (owner, 2026-09-29: "option 3"), design for approval, nothing built.**
+Status: **APPROVED (owner, 2026-09-29: option 3, and §6 answers 2–4 "agreed") — building; token to be regenerated before it goes into runner.env.**
 Reverses, for the owner's own installation only, the 2026-09-20 decision "API keys only — no claude.ai/Pro/Max login in the product"
 (CLAUDE.md; `agent-runtime-claude-sdk.md`). Read with `agent-runtime-hermes.md`, `agent-runtime-claude-sdk.md`, `docs/model-providers.md`.
+
+## Revisions after the spike and the build (2026-09-29) — these override anything below that disagrees
+
+1. **Claude Code harness only. Hermes is NOT supported, by decision.** Given a subscription token, Hermes presents itself as Claude Code:
+   `agent/anthropic_adapter.py` sends `user-agent: claude-code/<ver> (external, cli)`, `x-app: cli`, the OAuth-only betas, and prepends
+   "You are Claude Code, Anthropic's official CLI for Claude." to the system prompt. That is impersonating Anthropic's client to use a
+   subscription, and the platform will not route its agent fleet through it. The official CLI needs none of that: it *is* the client
+   (the spike's mock showed it building its own `claude-cli/…` request). db/165 limits `auth_mode = 'claude_subscription'` to the
+   `claude_agent_sdk` harness and removes the Hermes twin rows; the runner and the proxy refuse it on any other harness. Hermes agents stay on API keys.
+2. **The token never reaches an agent (better than §2.3 above).** The CLI is launched with `CLAUDE_CODE_OAUTH_TOKEN` set to the **run's proxy key**, so it builds
+   a normal login-style request with `Authorization: Bearer <run key>`; the ledger proxy identifies the run by that key as it always does and **replaces the bearer
+   with the real token** — the same swap it makes for an API key. Nothing else in the request is touched. There is no pass-through route and no run key in a URL.
+3. **The ledger:** a subscription call stores `cost = 0`, `notional_cost = list price`, `billing = 'subscription'` (db/164) — so every dollar total and statement
+   that sums `cost` is right without a change, and `month_to_date_cost()` (budgets) sums both.
+4. **Fences (proved, `mcp/claude_conformance` S0–S5, 20/20):** no `--bare`; instead `--restricted` (ignores user, project and local settings files), `--setting-sources ""`,
+   `--strict-mcp-config`, `--no-session-persistence`, `CLAUDE_CODE_DISABLE_{AUTO_MEMORY,CLAUDE_MDS,ORG_MEMORY,POLICY_SKILLS,BUNDLED_SKILLS,NONESSENTIAL_TRAFFIC}`, and the
+   empty per-agent HOME/config/cwd. The control (a plain default CLI) picks up three planted `CLAUDE.md` files and fires three planted hooks; the fenced launch loads none of it.
+5. **Where it lives:** `mcp/agent_runner/claude_launch.py` (shared by the harness and the suite), `store.py` (refusals, one-at-a-time cap, notional ledger, budget),
+   `ledger_proxy.py` (the swap), `service.py` (`/health.subscription`), `app/features/agents/runs.php` (`agent_harness_error()` refuses hiring/activating onto a
+   Max-plan model while the switch is off), `docs/deploy/set-claude-subscription.sh on|off|status`, db/164–166.
+
+## Build status
+
+Steps 2–4 (Claude Code) built and committed; the runner has NOT been restarted with the new code and the feature is OFF. Remaining: the owner regenerates the token
+and runs `set-claude-subscription.sh on <file>` (step 5), then one real turn on a `… · Max plan` model proves it end to end (ledger row `billing='subscription'`).
 
 ## 1. What and why
 

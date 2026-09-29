@@ -69,6 +69,8 @@ async def load_agent(member_id: int, config_version_id: int | None = None) -> di
             raise RunRefused("The agent's model is not active in the model registry.")
         agent["model"] = dict(model)
         if model["auth_mode"] == "claude_subscription":
+            if model["harness"] != "claude_agent_sdk":
+                raise RunRefused("A Claude subscription is only used through the official Claude Code CLI (the claude_agent_sdk harness).")
             # The owner's Max login (claude-subscription-auth.md): off unless switched on in runner.env, and one run at a
             # time because every agent on it shares one plan's rate limit (owner, 2026-09-29).
             if not config.subscription_enabled():

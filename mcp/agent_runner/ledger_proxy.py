@@ -169,8 +169,9 @@ async def _forward(request: Request, wire: str) -> Response:
     run, refusal = await _authenticate(request, wire)
     if refusal is not None:
         return refusal
-    if run["model"].get("auth_mode") == "claude_subscription" and (wire != "anthropic" or not config.subscription_enabled()):
-        return _error(wire, 403, "permission_error", "Claude subscription use is switched off, or this is not the Anthropic wire.")
+    if run["model"].get("auth_mode") == "claude_subscription" and (
+            wire != "anthropic" or run.get("harness") != "claude_agent_sdk" or not config.subscription_enabled()):
+        return _error(wire, 403, "permission_error", "Claude subscription use is switched off, or this is not the official Claude Code client on the Anthropic wire.")
     started = time.monotonic()
     raw = await request.body()
     try:

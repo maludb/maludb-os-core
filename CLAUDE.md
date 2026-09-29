@@ -258,7 +258,12 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
   name — `/health` on the runner says which exist. Adding one is a class, a renderer and a tuple
   entry: if it needs the platform to change, the interface was wrong.
 - **API keys only** — no claude.ai/Pro/Max login in the product (Agent SDK terms require prior
-  Anthropic approval for that).
+  Anthropic approval for that). **One owner-authorised exception (2026-09-29, this install only, OFF by default):** a
+  Claude Max login for agents on the **Claude Code harness only** (`model_registry.auth_mode = 'claude_subscription'`, the
+  "… · Max plan" rows), behind `ALLOW_CLAUDE_SUBSCRIPTION=1` + the setup-token in the runner's env file, set by
+  `docs/deploy/set-claude-subscription.sh`. The owner accepted the terms risk (spec `docs/build-specs/claude-subscription-auth.md`);
+  the token never reaches an agent (the ledger proxy swaps it in); calls are ledgered as notional, never as spend; Hermes is NOT
+  supported (it impersonates Claude Code) and no other tenant may use it. Never enable it elsewhere or by default.
 - **Scheduled evals are allowed** (owner, 2026-09-27 — reverses the 2026-09-20 "on demand only, no schedules or alerts"):
   an **Auditor** agent (Audit department — audits agent work) runs eval schedules, samples real runs and checks the evidence;
   a **Sysadmin** agent (IT department) does ALL ongoing monitoring read-only (health, disk, backups, versions, redacted logs,

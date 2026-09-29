@@ -93,6 +93,16 @@ function agent_harness_error(?array $model): ?string
     if ($harness === '') {
         return null;
     }
+    // A model billed to the owner's Claude subscription (db/164) can run only while the runner's switch is on; the runner says
+    // so in /health. Asked and unanswered (runner down) lets it through, as the harness check does.
+    if (($model['auth_mode'] ?? 'api_key') === 'claude_subscription') {
+        $health = runner_request('GET', '/health');
+        if ($health['status'] === 200 && empty($health['body']['subscription'])) {
+            return sprintf('%s bills to a Claude subscription, and subscription use is switched off on this install '
+                . '(ALLOW_CLAUDE_SUBSCRIPTION and the token in the runner\'s environment). Choose another model.',
+                (string) ($model['display_name'] ?? $model['model_key'] ?? 'That model'));
+        }
+    }
     $built = built_harnesses();
     if ($built === null || in_array($harness, $built, true)) {
         return null;

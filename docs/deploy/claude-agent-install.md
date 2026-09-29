@@ -40,7 +40,19 @@ the agent's `CLAUDE_CONFIG_DIR`: the run refuses and makes no upstream call.
 It also skips hooks, plugins, LSP, auto-memory and `CLAUDE.md` auto-discovery — each of which
 would otherwise put text into the agent that the platform did not put there.
 
-## No Anthropic account is involved
+## The one exception: the owner's Claude subscription (off by default)
+
+`--bare` cannot use a subscription, so a model whose `auth_mode` is `claude_subscription` (the "… · Max plan" rows, db/164–166) is launched
+whole and fenced instead — see `mcp/agent_runner/claude_launch.py` and conformance **S0–S5**, which plant hooks, `CLAUDE.md` files, settings,
+agents, skills and an extra MCP server in every place the CLI looks and fail if any takes effect. **Read the risk in
+`docs/build-specs/claude-subscription-auth.md` first.** It is for the owner's own install only, off unless
+`docs/deploy/set-claude-subscription.sh on <token-file>` has been run (the token is from `claude setup-token`; the script proves it with
+one tiny call, then writes it to the runner's env file, mode preserved, and restarts the runner — refusing while a run is in flight).
+`… off` removes it in one step. The agent still never holds the token: the CLI is given the run's proxy key as its login token and the ledger
+proxy swaps the real one in. Hermes is not supported on a subscription (it presents itself as Claude Code), and only Claude Code may use one.
+Conformance must stay green (S0 is the control that proves the planted files would bite) before the CLI pin is ever bumped.
+
+## No Anthropic account is involved (API-key models)
 
 The agent process runs as `bos-agent` under `systemd-run` with `IPAddressDeny=any` +
 `IPAddressAllow=localhost`. It cannot reach `api.anthropic.com` even if it were given a key: every
