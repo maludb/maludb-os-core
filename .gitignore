@@ -1,0 +1,32 @@
+# Secrets and environment
+/config/.env
+/.env
+
+# Local Claude Code settings
+/.claude/
+
+# Composer dependencies (composer.lock IS committed to pin versions)
+/vendor/
+
+# Scratch
+*.log
+
+# Python venv + caches
+/mcp/venv/
+__pycache__/
+*.egg-info/
+*.pyc
+
+# Uploaded files (tenant storage root; db/090)
+/storage/
+
+# Next.js front end (/var/www/web)
+/web/node_modules/
+/web/.next/
+/web/out/
+/web/.env.local
+
+# Session transcripts and env backups (may hold pasted secrets)
+claude-log/
+/config/.env.bak*
+*.env.bak*
