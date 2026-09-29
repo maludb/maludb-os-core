@@ -15,7 +15,8 @@ from pathlib import Path
 
 os.environ.setdefault("RUNNER_ENV_FILE", "/nonexistent")
 from agent_runner import hermes_render, pricing, run_token          # noqa: E402
-from agent_runner.ledger_proxy import _Assembler                    # noqa: E402
+from agent_runner import config                                       # noqa: E402
+from agent_runner.ledger_proxy import _Assembler, _upstream          # noqa: E402
 
 KEY = "k" * 40
 
@@ -314,3 +315,53 @@ class Cron(unittest.TestCase):
                 self.nxt(bad, "2026-09-19 10:07")
         with self.assertRaises(cron.CronError):
             self.nxt("0 9 * * *", "2026-09-19 10:07", "Mars/Olympus")
+
+
+class SubscriptionAuth(unittest.TestCase):
+    """The owner's Max login (docs/build-specs/claude-subscription-auth.md): off unless switched on, token swapped in by the proxy."""
+
+    TOKEN = "sk-ant-oat01-" + "t" * 40
+
+    def setUp(self):
+        self._saved = {k: config.ENV.get(k) for k in ("ALLOW_CLAUDE_SUBSCRIPTION", "CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY")}
+        config.ENV["ANTHROPIC_API_KEY"] = "sk-ant-api03-" + "a" * 30
+
+    def tearDown(self):
+        for k, v in self._saved.items():
+            config.ENV.pop(k, None)
+            if v is not None:
+                config.ENV[k] = v
+
+    def _model(self, mode):
+        return {"model": {"provider": "anthropic", "provider_model_id": "claude-sonnet-5", "endpoint_url": None, "auth_mode": mode}}
+
+    def test_off_without_the_switch_or_without_the_token(self):
+        config.ENV.pop("ALLOW_CLAUDE_SUBSCRIPTION", None); config.ENV["CLAUDE_CODE_OAUTH_TOKEN"] = self.TOKEN
+        self.assertFalse(config.subscription_enabled(), "a token alone switches nothing on")
+        config.ENV["ALLOW_CLAUDE_SUBSCRIPTION"] = "1"; config.ENV["CLAUDE_CODE_OAUTH_TOKEN"] = ""
+        self.assertFalse(config.subscription_enabled(), "the switch alone is not enough")
+        config.ENV["CLAUDE_CODE_OAUTH_TOKEN"] = "short"
+        self.assertFalse(config.subscription_enabled(), "a stub is not a token")
+        config.ENV["ALLOW_CLAUDE_SUBSCRIPTION"] = "yes"; config.ENV["CLAUDE_CODE_OAUTH_TOKEN"] = self.TOKEN
+        self.assertFalse(config.subscription_enabled(), "only an explicit 1 switches it on")
+
+    def test_on_with_both(self):
+        config.ENV["ALLOW_CLAUDE_SUBSCRIPTION"] = "1"; config.ENV["CLAUDE_CODE_OAUTH_TOKEN"] = self.TOKEN
+        self.assertTrue(config.subscription_enabled())
+
+    def test_a_subscription_model_gets_the_bearer_token_and_never_the_api_key(self):
+        config.ENV["ALLOW_CLAUDE_SUBSCRIPTION"] = "1"; config.ENV["CLAUDE_CODE_OAUTH_TOKEN"] = self.TOKEN
+        url, auth = _upstream(self._model("claude_subscription"), "anthropic")
+        self.assertEqual(url, "https://api.anthropic.com/v1/messages")
+        self.assertEqual(auth, {"authorization": "Bearer " + self.TOKEN})
+        self.assertNotIn("x-api-key", auth)
+
+    def test_an_api_key_model_is_unchanged(self):
+        config.ENV["ALLOW_CLAUDE_SUBSCRIPTION"] = "1"; config.ENV["CLAUDE_CODE_OAUTH_TOKEN"] = self.TOKEN
+        url, auth = _upstream(self._model("api_key"), "anthropic")
+        self.assertEqual(auth, {"x-api-key": config.ENV["ANTHROPIC_API_KEY"]})
+
+    def test_a_subscription_call_is_priced_notionally_by_the_same_table(self):
+        model = {"price_input_per_mtok": 2, "price_output_per_mtok": 10, "price_cache_read_per_mtok": Decimal("0.2"), "price_cache_write_per_mtok": Decimal("2.5")}
+        tokens = {"input": 2, "output": 4, "cache_read": 3289, "cache_write": 5308}
+        self.assertEqual(pricing.cost(tokens, model), Decimal("0.013972"), "list price, whatever it is billed to")

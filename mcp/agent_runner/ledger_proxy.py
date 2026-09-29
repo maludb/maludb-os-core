@@ -68,8 +68,12 @@ def _upstream(run: dict, wire: str) -> tuple[str, dict]:
     model = run["model"]
     key_env, default_base, _ = config.PROVIDERS.get(model["provider"], ("", "", wire))
     base = (model.get("endpoint_url") or default_base).rstrip("/")
-    api_key = config.get(key_env) if key_env else ""
     path = "/v1/messages" if wire == "anthropic" else "/v1/chat/completions"
+    if model.get("auth_mode") == "claude_subscription":
+        # The owner's Max login: the token replaces the run's key exactly as an API key would. It is the ONLY thing changed;
+        # the client's own headers (identity, betas) travel untouched, and the agent never holds the token.
+        return base + path, {"authorization": "Bearer " + config.subscription_token()}
+    api_key = config.get(key_env) if key_env else ""
     if not api_key:          # a local or keyless endpoint (Ollama, vLLM, the conformance dummy)
         return base + path, {}
     auth = {"x-api-key": api_key} if wire == "anthropic" else {"authorization": f"Bearer {api_key}"}
@@ -165,6 +169,8 @@ async def _forward(request: Request, wire: str) -> Response:
     run, refusal = await _authenticate(request, wire)
     if refusal is not None:
         return refusal
+    if run["model"].get("auth_mode") == "claude_subscription" and (wire != "anthropic" or not config.subscription_enabled()):
+        return _error(wire, 403, "permission_error", "Claude subscription use is switched off, or this is not the Anthropic wire.")
     started = time.monotonic()
     raw = await request.body()
     try:

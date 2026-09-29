@@ -68,6 +68,16 @@ async def load_agent(member_id: int, config_version_id: int | None = None) -> di
         if model is None or model["status"] != "active":
             raise RunRefused("The agent's model is not active in the model registry.")
         agent["model"] = dict(model)
+        if model["auth_mode"] == "claude_subscription":
+            # The owner's Max login (claude-subscription-auth.md): off unless switched on in runner.env, and one run at a
+            # time because every agent on it shares one plan's rate limit (owner, 2026-09-29).
+            if not config.subscription_enabled():
+                raise RunRefused("This agent's model bills to a Claude subscription, and subscription use is switched off "
+                                 "(ALLOW_CLAUDE_SUBSCRIPTION and the token in runner.env). Nothing was run.")
+            going = await con.fetchval("""SELECT count(*) FROM agent_runs r JOIN model_registry mr ON mr.id = r.model_id
+                                           WHERE r.status = 'running' AND mr.auth_mode = 'claude_subscription'""")
+            if going >= config.SUBSCRIPTION_MAX_CONCURRENT:
+                raise RunRefused("A subscription run is already going and the plan's limit is shared, so they run one at a time. Try again shortly.")
         agent["runtime_config"] = _json(agent["runtime_config"]) or {}
         departments = await con.fetch("""
             SELECT d.id, d.name FROM departments d JOIN department_members dm ON dm.department_id = d.id
@@ -233,15 +243,19 @@ async def month_to_date_cost(agent_member_id: int) -> Decimal:
     p = await pool()
     async with p.acquire() as con:
         return Decimal(str(await con.fetchval("""
-            SELECT COALESCE(sum(cost), 0) FROM prompt_ledger
+            -- money plus notional: a subscription call costs nothing but still counts against the agent's budget (owner, 2026-09-29)
+            SELECT COALESCE(sum(cost + notional_cost), 0) FROM prompt_ledger
              WHERE agent_member_id = $1 AND occurred_at >= date_trunc('month', now())""", agent_member_id)))
 
 
 async def write_ledger(*, run: dict, status: str, provider_request_id: str | None, tokens: dict,
                        latency_ms: int, cost: Decimal, context: dict | None, response, error_code: str | None = None,
                        error_message: str | None = None, call_kind: str = "messages") -> int:
-    """One prompt_ledger row and its prompt_payloads row, in one transaction."""
+    """One prompt_ledger row and its prompt_payloads row, in one transaction. On a subscription model the money is 0
+    and the list price the API would have charged goes in notional_cost (db/164) — so no statement mistakes it for spend."""
     model = run["model"]
+    subscription = model.get("auth_mode") == "claude_subscription"
+    billing, notional, cost = ("subscription", cost, Decimal(0)) if subscription else ("api", Decimal(0), cost)
     body = json.dumps({"context": context, "response": response}, sort_keys=True, default=str).encode()
     p = await pool()
     async with p.acquire() as con, con.transaction():
@@ -249,14 +263,14 @@ async def write_ledger(*, run: dict, status: str, provider_request_id: str | Non
             INSERT INTO prompt_ledger (agent_run_id, agent_member_id, acting_member_id, location_id, harness,
                    sdk_version, provider, model_id, provider_model_id, request_id, provider_request_id,
                    call_kind, status, error_code, error_message, input_tokens, output_tokens,
-                   cache_read_tokens, cache_write_tokens, latency_ms, cost, currency)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$22,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+                   cache_read_tokens, cache_write_tokens, latency_ms, cost, currency, billing, notional_cost)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$22,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$23,$24)
             RETURNING id""",
             run["id"], run["agent_member_id"], run["acting_member_id"], run["location_id"], run["harness"],
             run["sdk_version"], model["provider"], model["id"], model["provider_model_id"], run["request_id"],
             provider_request_id, status, error_code, (error_message or None) and error_message[:2000],
             tokens["input"], tokens["output"], tokens["cache_read"], tokens["cache_write"], latency_ms,
-            cost, model.get("currency") or "USD", call_kind)
+            cost, model.get("currency") or "USD", call_kind, billing, notional)
         await con.execute("""
             INSERT INTO prompt_payloads (ledger_id, context, response, byte_size, sha256)
             VALUES ($1, $2::jsonb, $3::jsonb, $4, $5)""",

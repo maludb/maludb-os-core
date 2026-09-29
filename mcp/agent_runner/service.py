@@ -216,7 +216,9 @@ async def start_eval_run(request: Request) -> JSONResponse:
 async def health(request: Request) -> JSONResponse:
     # `harnesses` is what PHP asks before it lets anyone be hired onto a model: a model_registry
     # row may name a harness nobody has built, and the hire must be refused then, not at dispatch.
-    return JSONResponse({"ok": True, "running": sorted(_tasks), "harnesses": registry.built_keys()})
+    return JSONResponse({"ok": True, "running": sorted(_tasks), "harnesses": registry.built_keys(),
+                         # PHP asks before letting anyone be hired onto a subscription model (claude-subscription-auth.md)
+                         "subscription": config.subscription_enabled()})
 
 
 api = Starlette(routes=[

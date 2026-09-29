@@ -42,6 +42,20 @@ MAX_WORKERS = int(get("RUNNER_MAX_WORKERS", "2"))
 DEFAULT_RUN_TIMEOUT = int(get("RUNNER_DEFAULT_TIMEOUT", "900"))
 AGENT_UNIX_USER = get("RUNNER_AGENT_USER", "")     # empty = run Hermes as the runner's own user (dev only)
 
+# Claude subscription (Max plan) login — the owner's own install only (docs/build-specs/claude-subscription-auth.md).
+# OFF unless BOTH the explicit switch and the token are in runner.env. The token never reaches an agent: the ledger
+# proxy swaps it in for the run's key on a model whose auth_mode is claude_subscription, as it does an API key.
+SUBSCRIPTION_MAX_CONCURRENT = int(get("RUNNER_SUBSCRIPTION_MAX_CONCURRENT", "1"))   # one Max login, one shared limit
+
+
+def subscription_token() -> str:
+    return get("CLAUDE_CODE_OAUTH_TOKEN").strip()
+
+
+def subscription_enabled() -> bool:
+    return get("ALLOW_CLAUDE_SUBSCRIPTION") == "1" and len(subscription_token()) >= 20
+
+
 # provider -> (env key holding the API key, upstream base URL, wire)
 PROVIDERS = {
     "anthropic": ("ANTHROPIC_API_KEY", "https://api.anthropic.com", "anthropic"),
