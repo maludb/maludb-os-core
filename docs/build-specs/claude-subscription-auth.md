@@ -91,4 +91,21 @@ call around the ledger. Store the token in the database or the repository. Use t
 
 ## Spike
 
-*(empty — step 1)*
+**2026-09-29, step 1 (done).** The owner's `setup-token` token (`sk-ant-oat01-…`, in `~/.claude_runner.env`, mode 600, outside the repo) was used once, with the
+official `claude` 2.1.278, **without `--bare`**, in a scratch `HOME`/`CLAUDE_CONFIG_DIR` and an emptied environment (`env -i`):
+
+- **It authenticates.** `CLAUDE_CODE_OAUTH_TOKEN` alone is enough; the CLI answered a one-word prompt (`is_error:false`, model `claude-sonnet-5`).
+  No proxy was in the path for this call, so the pass-through route (§3) is still untested against Anthropic — step 3's first proof.
+- **The CLI prices its own call notionally**: `total_cost_usd` 0.0219 with `costBasis: "list"` — what the API would have charged. That is the number the ledger's
+  `billing = 'subscription'` rows should carry, and the CLI's `usage` block gives the token counts the proxy will also see.
+- **What non-bare mode brings in** (all in the config dir, none from the host): `policy-limits.json` (account restrictions/compliance flags — benign here),
+  `remote-settings.json` (**empty** — the account has no remotely managed settings; if it ever does, that is an outside party's settings entering a run, so the harness
+  must fail closed when it is non-empty), `.claude.json` (identity and migration flags), `projects/`, `sessions/`. No hook, plugin or `CLAUDE.md` was read because none existed in the scratch dirs.
+- **The fences `--bare` gave, and their replacements** (`claude --help`): hooks/plugins/memory/CLAUDE.md discovery → an empty per-agent `HOME`, `CLAUDE_CONFIG_DIR` and `cwd`
+  (already how the run is laid out), `--setting-sources` restricted to sources that hold only our rendered `settings.json`, `--settings`, `--strict-mcp-config`,
+  `--disable-slash-commands` off/on as the persona needs, `--no-session-persistence`, `--restricted`, and the existing `--tools/--allowedTools` lists. Which of them actually
+  suffice is what the extended conformance suite must prove in step 4 — a planted hook, plugin, CLAUDE.md and settings file in the agent's home and cwd must NOT run.
+- **Not yet tested:** Hermes with this token; a run through the proxy; concurrency limits on the plan.
+
+**Token hygiene note.** While inspecting the file the token was printed once into this session's output (the file holds the bare token, not `KEY=value`, so a masking
+`sed` did not mask it). Regenerate it (`claude setup-token`) before it goes into `runner.env`; the script in step 5 stores it there and never prints it.
