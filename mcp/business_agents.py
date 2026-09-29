@@ -66,6 +66,17 @@ class AgentRunsIn(_Base):
     limit: int = Field(25, ge=1, le=100)
 
 
+class AgentConversationsIn(_Base):
+    agent_member_id: int | None = Field(None, description="Only your conversations with this agent")
+    include_archived: bool = Field(False, description="Also the ones you archived")
+    limit: int = Field(25, ge=1, le=100)
+
+
+class AgentConversationReadIn(_Base):
+    conversation_id: int = Field(..., description="One of YOUR conversations, from agent_conversations")
+    limit: int = Field(20, ge=1, le=100, description="The most recent turns, returned oldest first")
+
+
 class AgentPerformanceIn(_Base):
     agent_member_id: int | None = Field(None, description="One agent. Omit for every agent you may see")
     days: int = Field(30, ge=1, le=365, description="The period: how many days back from now")
@@ -272,6 +283,47 @@ def register(mcp, q) -> None:
             params.agent_member_id, params.status, params.parent_run_id, params.days, params.limit,
         )
         return '{"runs": ' + runs + '}'
+
+    # ---- agent_conversations / agent_conversation_read (agent-chat.md, db/163) --
+    @mcp.tool(name="agent_conversations", annotations={"title": "My chats with agents", **RO})
+    async def agent_conversations(params: AgentConversationsIn) -> str:
+        """The caller's own chat threads with agents (the Chat tab on an agent's page): title, which
+        agent, how many turns, when it began. A conversation is private to the person who had it, so
+        this never lists anyone else's. Call for "what did I ask Sasha last week", "find my chat about
+        the hiring plan". Read one with agent_conversation_read."""
+        rows = await q(
+            """
+            SELECT conversation_id, agent_member_id, agent_name, title, turns, last_run_id, created_at, archived_at
+              FROM mcp_agent_conversations
+             WHERE ($1::bigint IS NULL OR agent_member_id = $1)
+               AND ($2::boolean OR archived_at IS NULL)
+             ORDER BY coalesce(last_run_id, 0) DESC, conversation_id DESC
+             LIMIT $3
+            """,
+            params.agent_member_id, params.include_archived, params.limit,
+        )
+        return '{"conversations": ' + rows + '}'
+
+    @mcp.tool(name="agent_conversation_read", annotations={"title": "Read a chat with an agent", **RO})
+    async def agent_conversation_read(params: AgentConversationReadIn) -> str:
+        """The turns of one of the caller's own chats with an agent, oldest first: what the person said,
+        what the agent answered, each turn's state and cost, and the run behind it (follow run_id into
+        prompt_for_request for its model calls). Refuses a conversation that is not the caller's."""
+        turns = await q(
+            """
+            SELECT * FROM (
+              SELECT r.agent_run_id AS run_id, r.status, r.chat_utterance AS said, r.result AS reply, r.error,
+                     r.approval_request_id, r.cost, r.currency, r.started_at, r.finished_at, r.request_id
+                FROM mcp_agent_conversations c
+                JOIN mcp_agent_runs r ON r.conversation_id = c.conversation_id
+               WHERE c.conversation_id = $1
+               ORDER BY r.agent_run_id DESC
+               LIMIT $2) t
+             ORDER BY run_id
+            """,
+            params.conversation_id, params.limit,
+        )
+        return '{"turns": ' + turns + '}'
 
     # ---- agent_performance (H4, H8, DB7) --------------------------------------
     @mcp.tool(name="agent_performance", annotations={"title": "Agent performance", **RO})

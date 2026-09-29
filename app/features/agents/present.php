@@ -332,3 +332,36 @@ function present_escalation(array $e): array
         'entity_id' => ($e['entity_id'] ?? null) !== null ? (int) $e['entity_id'] : null,
     ];
 }
+
+/**
+ * One chat turn (agent-chat.md): what the person said, what the agent answered, and where it stands.
+ * The reply is shown once the run ended well or is held for an approval; an error only for a failure.
+ */
+function present_chat_turn(array $r): array
+{
+    $status = (string) $r['status'];
+    $done = $status !== 'running';
+    return [
+        'run_id' => (int) $r['id'],
+        'status' => $status,
+        'finished' => $done,
+        'said' => (string) ($r['chat_utterance'] ?? ''),
+        'reply' => in_array($status, ['succeeded', 'awaiting_approval'], true) && ($r['result'] ?? '') !== '' ? (string) $r['result'] : null,
+        'error' => $status === 'failed' ? (string) ($r['error'] ?? 'The run failed.') : null,
+        'approval_request_id' => isset($r['approval_request_id']) ? (int) $r['approval_request_id'] : null,
+        'cost' => isset($r['cost']) ? (string) $r['cost'] : null,
+        'currency' => $r['currency'] ?? null,
+        'started_at' => json_ts($r['started_at'] ?? null),
+        'finished_at' => json_ts($r['finished_at'] ?? null),
+    ];
+}
+
+/** A conversation in the Chat tab's list. */
+function present_chat_conversation(array $c): array
+{
+    return [
+        'id' => (int) $c['id'], 'title' => (string) $c['title'], 'turns' => (int) ($c['turns'] ?? 0),
+        'created_at' => json_ts($c['created_at'] ?? null), 'last_at' => json_ts($c['last_at'] ?? null),
+        'archived' => ($c['archived_at'] ?? null) !== null,
+    ];
+}

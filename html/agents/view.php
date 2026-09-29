@@ -17,7 +17,9 @@ if ($id === null || ($agent = find_agent($pdo, $id)) === null) {
     exit('Agent not found.');
 }
 // The tab is normalised, and everything the template needs assembled, by agent_view_data().
-$tab = request_string('tab', 'job') ?: 'job';
+// No tab asked for: the Chat tab opens first for an agent that can take a typed turn, Job for the rest (owner, 2026-09-29).
+require_once dirname(__DIR__, 2) . '/app/features/agents/chat.php';
+$tab = request_string('tab') ?: (agent_chat_unavailable_reason($agent) === null ? 'chat' : 'job');
 
 log_screen_view($pdo, 'agent-view');
 if (wants_json()) {
@@ -93,6 +95,26 @@ if (wants_json()) {
                     'created_at' => json_ts($m['created_at']),
                 ], $st->fetchAll()),
                 'endpoints' => array_map(static fn (array $x): array => ['channel' => (string) $x['channel'], 'address' => (string) $x['address']], $e->fetchAll()),
+            ];
+        })(),
+        // The Chat tab (agent-chat.md, db/163): this person's conversations with this agent, the open one's turns, and
+        // whether the agent can take a message now. Conversations are private to their person; the turns are theirs.
+        'chat' => !$on('chat') ? null : (static function () use ($pdo, $agent, $id): array {
+            require_once dirname(__DIR__, 2) . '/app/features/agents/chat.php';
+            $me = (int) current_member_id();
+            $archived = request_string('archived') === '1';
+            $list = find_agent_conversations($pdo, $id, $me, $archived);
+            $open = request_integer('c');
+            $conversation = $open !== null ? find_agent_conversation($pdo, $open, $me, $id) : ($list[0] ?? null);
+            $can = agent_chat_availability($pdo, $agent);
+            return [
+                'can_send' => $can['can'] && !is_agent_member() && ($conversation === null || $conversation['archived_at'] === null),
+                'reason' => $can['reason'], 'busy_run_id' => $can['busy_run_id'],
+                'archived_view' => $archived,
+                'conversations' => array_map('present_chat_conversation', $list),
+                'conversation' => $conversation !== null ? present_chat_conversation($conversation) : null,
+                'turns' => $conversation !== null ? array_map('present_chat_turn', find_conversation_turns($pdo, (int) $conversation['id'])) : [],
+                'message_max' => AGENT_CHAT_MESSAGE_MAX,
             ];
         })(),
         'counts' => [

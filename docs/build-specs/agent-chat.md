@@ -1,6 +1,6 @@
 # Agent Chat — talk to one agent from its page
 
-Status: **DRAFT for the owner's approval — nothing built.** 2026-09-29.
+Status: **APPROVED by the owner 2026-09-29 (all five §10 recommendations accepted) — building.**
 Read with: `kernel-chat-endpoint.md` (A6, the application-side chat this reuses), `assistants-and-messaging.md`
 (agent-to-agent messages and personal assistants), `agent-runtime-*.md`, `react-slice-template.md`, `click-around.md`.
 
@@ -75,7 +75,7 @@ Which tab opens by default is an owner decision (§10, Q1).
 
 ## 4. Behavior of a turn
 
-1. **Send** (server action → `POST /agents/chat-send.php`): validate gate, length (≤ 8,000 chars; the same cap as A6), agent
+1. **Send** (server action → `POST /agents/chat-send.php`): validate gate, length (≤ 6,000 chars), agent
    able to chat; create the conversation if none; build the prompt (§5); `start_agent_run($agent, $prompt, 'chat', null, $me)`;
    stamp the run with `conversation_id` and `chat_utterance`; answer **at once** with `{run_id, conversation_id, status:'running'}`.
    The request never waits for the model (unlike A6's held request).
@@ -103,7 +103,7 @@ For OS chat the context is:
   is not misled. Longer memory is the agent's own (MaluDB memory MCP) — chat does not summarise in v1.
 - The person's message, last.
 
-The whole prompt is capped at `AGENT_RUN_INSTRUCTIONS_MAX`. The person's verbatim text is kept in `chat_utterance`; the assembled
+The whole prompt is capped at `AGENT_CHAT_PROMPT_MAX` (20,000 characters — the runner enforces no cap, only the PHP handlers do; the 8,000 of a duty's instructions would not hold the history window). The person's verbatim text is kept in `chat_utterance`; the assembled
 prompt in `instructions`, as A6 does.
 
 ## 6. Data (db/163, additive)
@@ -165,7 +165,7 @@ Token streaming (SSE through the ledger proxy), a per-agent queue instead of "bu
 inline approve/deny in the thread, unifying with the personal-assistant Telegram/SMS/email threads so one assistant conversation spans
 channels, and starting a conversation from an escalation or a run.
 
-## 10. Questions for the owner (recommendation first)
+## 10. Decisions (owner, 2026-09-29 — every recommendation accepted)
 
 1. **Default tab.** Recommend **Chat opens first** for chat-capable agents (leftmost = default) and Job for the rest. Alternative: keep Job
    as the default and add Chat only to the left.

@@ -140,6 +140,8 @@
 | --- | --- | --- | --- | --- | --- |
 | `find_agents` | Which agents we employ, what each does, who manages them, and budget use this month | H2, H5 | `mcp_agents`, `mcp_agent_runs` | `department_id?`, `status?`, `near_budget_pct?` | insider |
 | `agent_profile` | One agent's job description, model, tool grants, schedule, config history, and what it may do without approval. Agents call it on themselves | H3, H7, H10 | `mcp_agents`, `mcp_agent_config_versions`, `mcp_agent_tool_grants`, `mcp_agent_duties`, `mcp_approval_policies` | `agent_member_id?` (default: caller) | hr, the agent's manager, or the agent |
+| `agent_conversations` | The caller's own chat threads with agents (agent page → Chat): which agent, title, turns, when. Private to the person | agent-chat | `mcp_agent_conversations` | `agent_member_id?`, `include_archived?` | own conversations only |
+| `agent_conversation_read` | The turns of one of the caller's own chats, oldest first: what was said, the reply, state, cost, the run behind each | agent-chat | `mcp_agent_conversations`, `mcp_agent_runs` | `conversation_id`, `limit?` | own conversations only |
 | `agent_performance` | How agents perform: tasks closed, tickets resolved, escalations (and what about), spend vs budget, eval scores, approvals needed. Pair with `activity_summary` for action counts | H4, H8, DB7 | `mcp_agents`, `mcp_tasks`, `mcp_tickets`, `mcp_agent_escalations`, `mcp_agent_runs`, `mcp_eval_runs`, `mcp_approval_requests` | `agent_member_id?`, `days` (default 30) | hr or manager |
 | `hr_history` | Hire, suspend, offboard and other HR events for a person or agent | H12, H13 | `mcp_hr_events`, `mcp_performance_reviews` | `member_id`, `include_reviews?` | hr (own: all) |
 

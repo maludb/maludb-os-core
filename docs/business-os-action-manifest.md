@@ -160,6 +160,9 @@ Actions (base `/agents/`):
 | `agent_run_duty_now` | `run-duty.php` | **agent**, **duty** | — | | | `agent_run.start` | agent's manager, mod:hr |
 | `agent_run_start` | `run.php` | **agent**, **instructions** | cancel while running | | never delegable to agents | `agent_run.start` | agent's manager, mod:hr |
 | `agent_run_cancel` | `run-cancel.php` | **agent_run** | — | ✔ | | `agent_run.cancel` | agent's manager, mod:hr |
+| `agent_chat_send` | `chat-send.php` | **agent**, **message**, conversation (one of yours with this agent - omit to start a new one) | cancel the run while it works | | never delegable to agents; refused while the agent is busy | `agent_chat.send` | agent's manager, mod:hr |
+| `agent_chat_rename` | `chat-rename.php` | **conversation**, **title** | rename it again | | never delegable to agents | `agent_chat.rename` | the person the conversation belongs to |
+| `agent_chat_archive` | `chat-archive.php` | **conversation**, archive (1 or 0 - default 1) | restore it | | never delegable to agents | `agent_chat.archive` | the person the conversation belongs to |
 | `agent_delegate` | `delegate.php` | **subagent**, **instructions**, reason (why this agent - required of a personal assistant), department (which of its departments - default its primary) | cancel the run | | | `agent_run.delegate` | an orchestrator agent, for an agent on its roster (a tree since db/154: an orchestrator may be below it); an assistant only within its person's departments |
 | `agent_principal_set` | `principal.php` | **agent**, person (the person it serves - omit to end it) | set the prior person | | never delegable to agents | `agent.principal_set` | super |
 | `agent_lead_propose` | `leads/propose.php` | — | decline them | | never delegable to agents | `agent_lead.propose` | super |

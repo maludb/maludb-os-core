@@ -1,6 +1,6 @@
 {
     "generated_from": "docs/business-os-action-manifest.md",
-    "generated_at": "2026-09-28T11:00:40+00:00",
+    "generated_at": "2026-09-29T15:12:42+00:00",
     "screens": {
         "dashboard": {
             "screen": "dashboard",
@@ -2062,6 +2062,87 @@
             "approval": null,
             "log_event": "agent_run.cancel",
             "who": "agent's manager, mod:hr",
+            "built": true
+        },
+        "agent_chat_send": {
+            "action": "agent_chat_send",
+            "section": "Agents (HR)",
+            "endpoint": "/agents/chat-send.php",
+            "params": [
+                {
+                    "name": "agent",
+                    "required": true,
+                    "repeated": false,
+                    "hint": ""
+                },
+                {
+                    "name": "message",
+                    "required": true,
+                    "repeated": false,
+                    "hint": ""
+                },
+                {
+                    "name": "conversation",
+                    "required": false,
+                    "repeated": false,
+                    "hint": "one of yours with this agent - omit to start a new one"
+                }
+            ],
+            "undo": "cancel the run while it works",
+            "confirm": false,
+            "approval": "never delegable to agents; refused while the agent is busy",
+            "log_event": "agent_chat.send",
+            "who": "agent's manager, mod:hr",
+            "built": true
+        },
+        "agent_chat_rename": {
+            "action": "agent_chat_rename",
+            "section": "Agents (HR)",
+            "endpoint": "/agents/chat-rename.php",
+            "params": [
+                {
+                    "name": "conversation",
+                    "required": true,
+                    "repeated": false,
+                    "hint": ""
+                },
+                {
+                    "name": "title",
+                    "required": true,
+                    "repeated": false,
+                    "hint": ""
+                }
+            ],
+            "undo": "rename it again",
+            "confirm": false,
+            "approval": "never delegable to agents",
+            "log_event": "agent_chat.rename",
+            "who": "the person the conversation belongs to",
+            "built": true
+        },
+        "agent_chat_archive": {
+            "action": "agent_chat_archive",
+            "section": "Agents (HR)",
+            "endpoint": "/agents/chat-archive.php",
+            "params": [
+                {
+                    "name": "conversation",
+                    "required": true,
+                    "repeated": false,
+                    "hint": ""
+                },
+                {
+                    "name": "archive",
+                    "required": false,
+                    "repeated": false,
+                    "hint": "1 or 0 - default 1"
+                }
+            ],
+            "undo": "restore it",
+            "confirm": false,
+            "approval": "never delegable to agents",
+            "log_event": "agent_chat.archive",
+            "who": "the person the conversation belongs to",
             "built": true
         },
         "agent_delegate": {

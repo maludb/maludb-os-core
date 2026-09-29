@@ -20,6 +20,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 4) . '/app/api/bootstrap.php';
 require_once dirname(__DIR__, 4) . '/app/api/directory.php';
 require_once dirname(__DIR__, 4) . '/app/features/agents/runs.php';
+require_once dirname(__DIR__, 4) . '/app/features/agents/chat.php';
 
 const CHAT_WAIT_DEFAULT = 60;
 const CHAT_WAIT_MAX = 110;
@@ -148,10 +149,7 @@ if ($conversation !== '') {
     $earlier = array_reverse($st->fetchAll());
     if ($earlier !== []) {
         $lines[] = 'Earlier in this conversation (oldest first):';
-        foreach ($earlier as $turn) {
-            $lines[] = 'Person: ' . mb_substr((string) $turn['chat_utterance'], 0, 600);
-            $lines[] = 'You: ' . mb_substr((string) $turn['result'], 0, 900);
-        }
+        array_push($lines, ...chat_history_lines($earlier, 600, 900));   // shared with the OS Chat tab (agent-chat.md)
     }
 }
 $lines[] = 'Their message: ' . $utterance;

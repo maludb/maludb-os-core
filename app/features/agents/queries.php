@@ -21,7 +21,7 @@ const ESCALATION_REASON_KINDS = ['needs_approval', 'uncertain', 'blocked', 'poli
  * (html/agents/view.php) and the re-render (render_agent_page()). They each kept their own
  * copy until 2026-09-18, which meant adding a tab worked in one and 404'd in the other.
  */
-const AGENT_VIEW_TABS = ['job', 'tools', 'skills', 'duties', 'roster', 'inbox', 'performance', 'trail'];   // inbox: db/155   // skills: owner, 2026-09-27
+const AGENT_VIEW_TABS = ['chat', 'job', 'tools', 'skills', 'duties', 'roster', 'inbox', 'performance', 'trail'];   // inbox: db/155   // skills: owner, 2026-09-27   // chat: agent-chat.md, 2026-09-29 (leftmost)
 
 const AGENT_KINDS = ['orchestrator', 'subagent', 'voice'];
 /** What each kind is called on screen (db/091 added the voice agent). */
