@@ -65,8 +65,10 @@ Which tab opens by default is an owner decision (§10, Q1).
   the **run** (`/ai/runs/{id}?back=…`). Failures show the runner's own words.
 - **In flight:** a "working…" bubble with the live tool events as they arrive, a **Stop** button (existing run-cancel), and the composer
   disabled for that agent until the run ends.
-- **Waiting for approval:** an inline card naming the request and linking to it; when it is decided the run resumes and the reply lands
-  in the thread (existing pause/release behavior — chat adds no approval logic).
+- **Waiting for approval:** an inline card naming the request and linking to it. The paused run stays where it is: the existing approval
+  flow may start a *follow-up run* when the approver asks for one, and that run is a run of the agent, **not a turn of this thread** (it
+  shows in Performance and AI Ops). The agent is not busy while paused, so the person can keep talking to it; the next prompt's history
+  says the earlier turn paused. Chat adds no approval logic.
 - **Busy agent:** the runner allows one run per agent. If the agent is on a duty or a delegated task, the composer is disabled and says
   what it is doing and links to that run; nothing is queued in v1 (§10, Q3).
 - **Rendering:** replies are rendered as Markdown-lite (paragraphs, lists, code, links) through a sanitizer — never raw HTML.
@@ -200,3 +202,18 @@ Estimate: steps 1–2 are PHP/SQL worker-size; step 3 is the one that needs care
 - **Cost:** history is resent every turn; the window caps it, and each turn shows its cost.
 - **Transcripts are data:** `chat_utterance` and `result` may hold sensitive text; they inherit `agent_runs` retention and visibility
   and are never copied into logs or the activity trail.
+
+## Status (2026-09-29)
+
+**Built and committed:** steps 1–4 (db/163 applied; `app/features/agents/chat.php`; `chat-send/turn/rename/archive.php`; the `chat` block of
+`GET /agents/{id}`; manifest rows `agent_chat_send|rename|archive`; records MCP `agent_conversations`, `agent_conversation_read`; React `ChatTab`,
+`ChatPane`, the poll route `web/app/api/agent-chat/route.ts`, the server actions in `web/lib/agent-chat-actions.ts`; the Chat tab leftmost and the default
+for chat-capable agents). Also fixed: `html/agents/run-cancel.php` read `$agent['member_id']` (the view has `agent_member_id`), so Stop would have answered 404.
+
+**Proven:** `bin/test_agent_chat.php` (23 checks, rolled back); smoke `mcp/smoke/33-agent-chat.json` through the actions MCP, 17/17 — two real turns with
+Comms (agent 47; the second carried the first from history; about 0.011 USD a turn), a playbook agent refused, an empty message refused, rename, archive,
+an archived conversation refused; the rendered JSON of the tab (default tab per agent kind, `?c=new`, the archived list); the poll answers only the
+person's own turns (404 otherwise); `tsc` clean and a full `next build` in a scratch copy.
+
+**Not yet proven — needs a browser session that is the owner's, after the web deploy:** the client behavior (send, live polling and the tool trail, Stop, reload
+mid-turn, the phone layout, the paused-for-approval card), and a Stop against a real running turn (to prove the run-cancel fix).

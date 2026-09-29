@@ -112,11 +112,33 @@ export const agentSkills = z.object({
 });
 export type AgentSkills = z.infer<typeof agentSkills>;
 
+/** One chat turn (agent-chat.md): what the person said, what the agent answered, where it stands. */
+export const chatTurn = z.object({
+  run_id: z.number().int(), status: z.enum(["running", "awaiting_approval", "succeeded", "failed", "cancelled"]), finished: z.boolean(),
+  said: z.string(), reply: z.string().nullable(), error: z.string().nullable(), approval_request_id: z.number().int().nullable(),
+  cost: z.string().nullable(), currency: z.string().nullable(), started_at: z.string().nullable(), finished_at: z.string().nullable(),
+});
+export type ChatTurn = z.infer<typeof chatTurn>;
+
+export const chatConversation = z.object({
+  id: z.number().int(), title: z.string(), turns: z.number().int(), created_at: z.string().nullable(), last_at: z.string().nullable(), archived: z.boolean(),
+});
+export type ChatConversation = z.infer<typeof chatConversation>;
+
+/** The Chat tab (db/163): this person's conversations with this agent, the open one's turns, and whether a message can go now. */
+export const agentChat = z.object({
+  can_send: z.boolean(), reason: z.string().nullable(), busy_run_id: z.number().int().nullable(), archived_view: z.boolean(),
+  conversations: z.array(chatConversation), conversation: chatConversation.nullable(), turns: z.array(chatTurn), message_max: z.number().int(),
+});
+export type AgentChat = z.infer<typeof agentChat>;
+
 export const agentView = z.object({
   agent,
-  tab: z.enum(["job", "tools", "skills", "duties", "roster", "inbox", "performance", "trail"]),
+  tab: z.enum(["chat", "job", "tools", "skills", "duties", "roster", "inbox", "performance", "trail"]),
   /** The Inbox tab (db/155-156). */
   inbox: agentInbox.default({ messages: [], endpoints: [] }),
+  /** The Chat tab (agent-chat.md); null on every other tab. */
+  chat: agentChat.nullable().default(null),
   version: agentVersion.nullable(),
   pending_version: z.object({ id: z.number().int(), version_no: z.number().int() }).nullable(),
   tool_grants: z.array(z.object({

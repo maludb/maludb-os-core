@@ -105,7 +105,8 @@ if (wants_json()) {
             $archived = request_string('archived') === '1';
             $list = find_agent_conversations($pdo, $id, $me, $archived);
             $open = request_integer('c');
-            $conversation = $open !== null ? find_agent_conversation($pdo, $open, $me, $id) : ($list[0] ?? null);
+            // ?c=<id> opens one; ?c=new is a blank page for a new conversation; neither opens the newest.
+            $conversation = request_string('c') === 'new' ? null : ($open !== null ? find_agent_conversation($pdo, $open, $me, $id) : ($list[0] ?? null));
             $can = agent_chat_availability($pdo, $agent);
             return [
                 'can_send' => $can['can'] && !is_agent_member() && ($conversation === null || $conversation['archived_at'] === null),

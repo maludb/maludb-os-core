@@ -19,7 +19,7 @@ if ($run === null || $run['agent_member_id'] === null || ($agent = find_agent($p
     http_response_code(404);
     exit('Run not found.');
 }
-$id = (int) $agent['member_id'];
+$id = (int) $agent['agent_member_id'];
 agent_require_hr_or_manager($pdo, $agent);
 agent_refuse_agent_caller();
 

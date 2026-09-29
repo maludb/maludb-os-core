@@ -368,3 +368,8 @@ a.profile-chip:hover { border-color: var(--cyan); }
 @media (prefers-reduced-motion: reduce) {
   .av-stage-zoom, .profile-panel, .node { transition: none !important; animation: none !important; }
 }
+
+/* Agent Chat (docs/build-specs/agent-chat.md): a reply is Markdown — tidy the margins, never overflow the bubble. */
+.agent-chat-reply > :last-child { margin-bottom: 0; }
+.agent-chat-reply pre { overflow-x: auto; background: var(--bs-light, #f8f9fa); padding: .5rem .75rem; border-radius: .25rem; }
+.agent-chat-reply table { display: block; overflow-x: auto; }

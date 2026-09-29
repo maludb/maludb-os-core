@@ -46,6 +46,9 @@ function chat_history_lines(array $turns, int $personCut, int $agentCut, ?int $b
             $status === 'succeeded' => mb_substr((string) $turn['result'], 0, $agentCut),
             $status === 'cancelled' => '(the person stopped this turn before you finished)',
             $status === 'failed' => '(this turn failed and you gave no reply)',
+            $status === 'awaiting_approval' => trim((string) $turn['result']) !== ''
+                ? mb_substr((string) $turn['result'], 0, $agentCut) . ' (then this paused for an approval)'
+                : '(this paused for an approval)',
             default => '(no reply yet)',
         };
         $pairs[] = ['Person: ' . $said, 'You: ' . $reply];

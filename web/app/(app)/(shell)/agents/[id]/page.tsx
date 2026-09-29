@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import AgentAvatarBadge from "@/components/agents/AgentAvatarBadge";
 import AgentSkillAssign from "@/components/agents/AgentSkillAssign";
+import ChatTab from "@/components/agents/ChatTab";
 import InboxTab from "@/components/assistants/InboxTab";
 import KindBadge from "@/components/skills/KindBadge";
 import { AgentKindBadge, AgentStatusBadge } from "@/components/agents/Badges";
@@ -22,7 +23,7 @@ import { StateBadge, money, tokens } from "@/components/aiops/AiOpsNav";
 
 export const metadata: Metadata = { title: "Agent · HR" };
 
-const TAB_KEYS = ["job", "tools", "skills", "duties", "roster", "inbox", "performance", "trail"] as const;
+const TAB_KEYS = ["chat", "job", "tools", "skills", "duties", "roster", "inbox", "performance", "trail"] as const;
 
 /**
  * Screen `agent-view` — tabs are the card header and each tab is a URL (?tab=), as in PHP.
@@ -33,12 +34,16 @@ export default async function AgentPage({
   params, searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; back?: string }>;
+  searchParams: Promise<{ tab?: string; back?: string; c?: string; archived?: string }>;
 }) {
   const { id: rawId } = await params;
   if (!/^\d+$/.test(rawId)) notFound();
-  const { tab: rawTab, back: rawBack } = await searchParams;
-  const tabQuery = rawTab && (TAB_KEYS as readonly string[]).includes(rawTab) ? `?tab=${rawTab}` : "";
+  const { tab: rawTab, back: rawBack, c: rawConversation, archived: rawArchived } = await searchParams;
+  // The Chat tab (agent-chat.md) also carries which conversation is open (?c=<id> or ?c=new) and whether the archive is shown.
+  const chatParams = rawTab === "chat"
+    ? [rawConversation && /^(\d+|new)$/.test(rawConversation) ? `&c=${rawConversation}` : "", rawArchived === "1" ? "&archived=1" : ""].join("")
+    : "";
+  const tabQuery = rawTab && (TAB_KEYS as readonly string[]).includes(rawTab) ? `?tab=${rawTab}${chatParams}` : "";
   // The `back` this page was opened with rides along on its tabs; `here` (this URL, back included) is
   // what every link off the page carries, so a run or an approval opened here comes back to this tab.
   const back = isSafeBack(rawBack) ? rawBack : null;
@@ -50,7 +55,7 @@ export default async function AgentPage({
     const id = a.id as number;
     // A voice agent stands outside delegation entirely (db/091), so it has no roster to show.
     const tabs: [AgentView["tab"], string][] = [
-      ["job", "Job"], ["tools", "Tools"], ["skills", "Skills"], ["duties", "Duties"],
+      ["chat", "Chat"], ["job", "Job"], ["tools", "Tools"], ["skills", "Skills"], ["duties", "Duties"],
       ...(a.kind === "voice" ? [] : [["roster", a.kind === "orchestrator" ? "Roster" : "Orchestrators"] as [AgentView["tab"], string]]),
       ["inbox", "Inbox"], ["performance", "Performance"], ["trail", "Trail"],
     ];
@@ -128,6 +133,7 @@ export default async function AgentPage({
                 </div>
                 <div className="tab-content">
                   <div className="tab-pane fade show active p-4" id={`agent-view-pane-${data.tab}`} role="tabpanel">
+                    {data.tab === "chat" && data.chat !== null && <ChatTab agentId={id} agentName={a.name} chat={data.chat} timeZone={timeZone} here={here} back={back} />}
                     {data.tab === "job" && <JobTab data={data} timeZone={timeZone} here={here} />}
                     {data.tab === "tools" && <ToolsTab data={data} here={here} />}
                     {data.tab === "skills" && <SkillsTab data={data} here={here} />}
