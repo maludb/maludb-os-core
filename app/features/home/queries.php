@@ -171,7 +171,7 @@ function home_recent_activity(PDO $pdo, int $limit = 8): array
 function home_agents(PDO $pdo, int $limit = 12): array
 {
     $st = $pdo->prepare(<<<'SQL'
-        SELECT a.agent_member_id, a.display_name, a.job_title, a.status, a.agent_kind,
+        SELECT a.agent_member_id, a.display_name, a.job_title, a.description, a.status, a.agent_kind,
                a.role_key, a.profile_pic_url, a.model_key, a.model_id, a.harness, a.subagent_count,
                a.suspended_at,
                d.department_id,

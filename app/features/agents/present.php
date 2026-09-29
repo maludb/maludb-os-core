@@ -64,6 +64,8 @@ function present_agent_row(array $a): array
         'kind_label' => AGENT_KIND_LABELS[$kind] ?? ucfirst($kind),
         'subagent_count' => (int) ($a['subagent_count'] ?? 0),
         'job_title' => $a['job_title'] ?? null,
+        // The profile description, shown on the card (2026-09-29).
+        'description' => trim((string) ($a['description'] ?? '')) !== '' ? trim((string) $a['description']) : null,
         'manager_name' => $a['manager_name'] ?? null,
         'manager_member_id' => isset($a['manager_member_id']) ? (int) $a['manager_member_id'] : null,
         'model_key' => $a['model_key'] ?? null,

@@ -22,6 +22,8 @@ export const agentRow = z.object({
   kind_label: z.string(),
   subagent_count: z.number().int(),
   job_title: z.string().nullable(),
+  /** The profile description, shown on the card (2026-09-29). */
+  description: z.string().nullable().default(null),
   manager_name: z.string().nullable(),
   manager_member_id: z.number().int().nullable().default(null),
   model_key: z.string().nullable(),

@@ -84,6 +84,8 @@ function present_home_agent(array $a, string $viewerTz): array
         'initials' => agent_initials((string) ($a['display_name'] ?? '')),
         'picture_url' => $picture !== '' ? $picture : null,
         'job_title' => ($a['job_title'] ?? '') !== '' ? $a['job_title'] : null,
+        // The profile description (agent_profiles.description): what the agent is, in the card.
+        'description' => trim((string) ($a['description'] ?? '')) !== '' ? trim((string) $a['description']) : null,
         'status' => (string) ($a['status'] ?? ''),
         'department_name' => ($a['department_name'] ?? '') !== '' ? $a['department_name'] : null,
         // Click-around step 2: the department's id and the run the activity line speaks of.

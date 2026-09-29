@@ -73,8 +73,9 @@ export default async function AgentsListPage({
                   <RecordCard key={a.id} id={`agent-row-${a.id}`} href={withBack(`/agents/${a.id}`, here)} title={a.name} muted={a.status !== "active"}
                     avatar={<AgentAvatarBadge initials={a.avatar.initials} pictureUrl={a.avatar.picture_url} sizeClass="avatar-md flex-shrink-0" />}
                     badges={<AgentStatusBadge status={a.status} />}
-                    description={a.job_title ?? "—"}
+                    description={a.description ?? a.job_title ?? "—"}
                     facts={[
+                      ...(a.description && a.job_title ? [["Title", a.job_title] as [string, React.ReactNode]] : []),
                       ["Role", a.role_key ?? "—"],
                       ["Manager", a.manager_member_id !== null && a.manager_name ? <Who who={{ id: a.manager_member_id, name: a.manager_name }} here={here} /> : a.manager_name ?? "—"],
                       ["Model", a.model_id !== null && a.model_key ? <Link href={withBack(`/settings/models/${a.model_id}/edit`, here)}>{a.model_key}</Link> : a.model_key ?? "—"],

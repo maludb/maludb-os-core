@@ -7,6 +7,8 @@ export const homeAgent = z.object({
   initials: z.string(),
   picture_url: z.string().nullable(),
   job_title: z.string().nullable(),
+  /** The profile description, shown under the job title on the card. */
+  description: z.string().nullable().default(null),
   status: z.string(),
   department_name: z.string().nullable(),
   /** Step 2 (additive): the department's id and the run the activity line speaks of. */

@@ -142,6 +142,7 @@ function AgentCard({ a, here }: { a: HomeAgent; here: string | null }) {
           </div>
           <div className="fw-bold text-dark text-truncate" title={a.display_name}>{a.display_name}</div>
           <div className="fs-11 text-muted text-truncate" title={a.job_title ?? ""}>{a.job_title ?? "—"}</div>
+          {a.description && <div className="fs-11 text-muted text-truncate-2-line mt-1" id={`home-agent-description-${a.id}`} title={a.description}>{a.description}</div>}
           {a.status !== "active" && <span className={`badge bg-soft-${badge} text-${badge} mt-2`}>{ucfirst(a.status)}</span>}
           {/* Plain blocks, not flex rows: a flex child needs min-width:0 before text-truncate bites. */}
           <div className="fs-11 text-muted text-truncate mt-2" title={a.department_name ?? ""}>
