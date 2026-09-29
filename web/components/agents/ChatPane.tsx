@@ -23,7 +23,7 @@ export default function ChatPane({
   canSend: boolean;
   reason: string | null;
   /** The turn still in flight, if any — from the server's own data. */
-  running: { runId: number; said: string } | null;
+  running: { runId: number; startedAt: string | null } | null;
   messageMax: number;
   children: React.ReactNode;
 }) {
@@ -39,6 +39,8 @@ export default function ChatPane({
   const cursor = useRef(0);
   const scroller = useRef<HTMLDivElement>(null);
   const runId = running?.runId ?? null;
+  const startedAt = running?.startedAt ?? null;
+  const [now, setNow] = useState(() => Date.now());
 
   // A new turn starts a fresh trail of tool calls.
   useEffect(() => { cursor.current = 0; setEvents([]); setStopping(false); setPollFailed(false); }, [runId]);
@@ -70,8 +72,21 @@ export default function ChatPane({
     };
     const timer = setInterval(tick, 1500);
     void tick();
-    return () => { stopped = true; clearInterval(timer); };
+    // A tab in the background is not polled (it would only add load); the moment it is looked at again, catch up at once —
+    // the turn may well have finished while it was hidden.
+    const onVisible = () => { if (document.visibilityState === "visible") void tick(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => { stopped = true; clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("focus", onVisible); };
   }, [runId, router]);
+
+  // How long the turn has been going, so a slow start (a Hermes agent takes up to a minute to come up) does not look like a hang.
+  useEffect(() => {
+    if (runId === null) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [runId]);
+  const elapsed = startedAt !== null ? Math.max(0, Math.round((now - new Date(startedAt).getTime()) / 1000)) : null;
 
   // Keep the newest turn in view.
   useEffect(() => { scroller.current?.scrollTo({ top: scroller.current.scrollHeight }); }, [children, events.length, runId]);
@@ -112,6 +127,7 @@ export default function ChatPane({
             <span className="spinner-border spinner-border-sm mt-1 text-primary" aria-hidden="true"></span>
             <div className="fs-13">
               <span className="fw-semibold">{agentName}</span> is working{calling ? <> — calling <code>{calling}</code></> : "…"}
+              {elapsed !== null && <span className="text-muted fs-12"> ({elapsed < 90 ? `${elapsed}s` : `${Math.floor(elapsed / 60)} min ${elapsed % 60}s`}{elapsed > 20 && tools.length === 0 && !calling ? " — this agent can take a minute or two" : ""})</span>}
               {tools.length > 0 && <div className="fs-12 text-muted">{tools.length} tool call{tools.length === 1 ? "" : "s"} so far: {tools.slice(-4).map((t) => t.tool).join(", ")}</div>}
               {pollFailed && <div className="fs-12 text-warning">Lost touch for a moment — still trying. The turn keeps running.</div>}
               <button type="button" className="btn btn-sm btn-outline-danger mt-2" id="agent-chat-stop" onClick={stop} disabled={stopping}>

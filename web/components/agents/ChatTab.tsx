@@ -71,7 +71,7 @@ export default function ChatTab({
         {/* Keyed by conversation: opening another, or a new one, starts the message box and the poll afresh. */}
         <ChatPane key={open?.id ?? "new"} agentId={agentId} agentName={agentName} conversationId={open?.id ?? null}
                   canSend={chat.can_send} reason={chat.reason} messageMax={chat.message_max}
-                  running={runningTurn ? { runId: runningTurn.run_id, said: runningTurn.said } : null}>
+                  running={runningTurn ? { runId: runningTurn.run_id, startedAt: runningTurn.started_at } : null}>
           {chat.turns.length === 0 ? (
             <p className="text-muted mb-0" id="agent-chat-empty">
               {open === null ? <>Start a conversation with {agentName}: ask a question, or give it a task — it works with its own tools and says what it did. <strong>Type your message in the box below.</strong> <i className="feather-arrow-down ms-1"></i></> : "No turns yet."}
