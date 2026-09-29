@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "@/components/kit/Link";
 import PageHeader from "@/components/kit/PageHeader";
 import { ActionOutcome } from "@/components/kit/ActionForm";
@@ -25,6 +26,12 @@ export default function ModelForm({ data, back = null }: { data: ModelFormData; 
   const isEdit = m.id !== null;
   const list = "/settings/models";   // a model has no page of its own: Cancel and a save land on the list (R5)
   const { state, pending, onSubmit } = useRecordForm("/settings/models/save.php", back);
+  // The Claude Max plan is offered only where it can work: an Anthropic model on the Claude Code harness (docs/build-specs/claude-subscription-auth.md).
+  const [provider, setProvider] = useState(m.provider || options.providers[0]);
+  const [harness, setHarness] = useState(m.harness || options.harnesses[0]);
+  const [billsTo, setBillsTo] = useState<string>(m.auth_mode);
+  const planEligible = provider === "anthropic" && harness === "claude_agent_sdk";
+  const plan = billsTo === "claude_subscription" && planEligible;
 
   return (
     <>
@@ -53,7 +60,7 @@ export default function ModelForm({ data, back = null }: { data: ModelFormData; 
                     <input type="text" className="form-control" id="model-form-field-display_name" name="display_name" defaultValue={m.display_name} required />
                   </FieldRow>
                   <FieldRow label="Provider" htmlFor="model-form-field-provider">
-                    <select className="form-select" id="model-form-field-provider" name="provider" required defaultValue={m.provider || options.providers[0]}>
+                    <select className="form-select" id="model-form-field-provider" name="provider" required value={provider} onChange={(e) => setProvider(e.target.value)}>
                       {options.providers.map((p) => <option value={p} key={p}>{ucfirst(p)}</option>)}
                     </select>
                   </FieldRow>
@@ -63,7 +70,7 @@ export default function ModelForm({ data, back = null }: { data: ModelFormData; 
                     <div className="form-text">Sent to the provider API.</div>
                   </FieldRow>
                   <FieldRow label="Harness" htmlFor="model-form-field-harness">
-                    <select className="form-select" id="model-form-field-harness" name="harness" required defaultValue={m.harness || options.harnesses[0]}>
+                    <select className="form-select" id="model-form-field-harness" name="harness" required value={harness} onChange={(e) => setHarness(e.target.value)}>
                       {options.harnesses.map((h) => (
                         <option value={h} key={h}>{h}{built && !built.includes(h) ? " — no harness built" : ""}</option>
                       ))}
@@ -72,6 +79,30 @@ export default function ModelForm({ data, back = null }: { data: ModelFormData; 
                       <div className="form-text">
                         Built and runnable today: {built.length ? built.join(", ") : "none"}. A model on any other
                         harness can be registered, but nobody can be hired onto it yet.
+                      </div>
+                    )}
+                  </FieldRow>
+                  <FieldRow label="Bills to" htmlFor="model-form-field-auth_mode">
+                    <select className="form-select" id="model-form-field-auth_mode" name="auth_mode" value={planEligible ? billsTo : "api_key"}
+                            onChange={(e) => setBillsTo(e.target.value)} disabled={!planEligible}>
+                      <option value="api_key">An API key (paid per token)</option>
+                      <option value="claude_subscription">The Claude Max plan (Claude Code only)</option>
+                    </select>
+                    {/* A disabled select is not submitted, and an ineligible model always bills to a key. */}
+                    {!planEligible && <input type="hidden" name="auth_mode" value="api_key" />}
+                    <div className="form-text" id="model-form-auth-help">
+                      {planEligible
+                        ? "The Claude Max plan is available for Anthropic models on the claude_agent_sdk harness (the official Claude Code CLI)."
+                        : "Choose provider Anthropic and harness claude_agent_sdk to bill a model to the Claude Max plan."}
+                      {isEdit && " How a model bills cannot change once agents use it — register a separate model for the other way."}
+                    </div>
+                    {plan && (
+                      <div className="alert alert-warning fs-12 mt-2 mb-0" id="model-form-max-plan-warning" role="alert">
+                        <strong>Read this first.</strong> Running autonomous agents on a Claude subscription may breach Anthropic&rsquo;s terms, can be throttled or
+                        blocked at any time, and could put the whole Max account at risk. It is for this install only, the plan&rsquo;s rate limit is shared, so these
+                        agents run one at a time, and the prices below are what the API <em>would</em> charge — recorded as notional cost, never as spend.{" "}
+                        {options.subscription === false && <strong>Subscription use is switched off on this install, so an agent cannot be hired onto this model until it is switched on (docs/deploy/set-claude-subscription.sh).</strong>}
+                        {options.subscription === true && <span>Subscription use is switched on.</span>}
                       </div>
                     )}
                   </FieldRow>
@@ -102,10 +133,16 @@ export default function ModelForm({ data, back = null }: { data: ModelFormData; 
                       {options.statuses.map((s) => <option value={s} key={s}>{ucfirst(s)}</option>)}
                     </select>
                   </FieldRow>
-                  <div className="alert alert-secondary fs-12 mb-0" id="model-form-no-key-note">
-                    No API key is attached — a model without a key can be hired against and cannot be run
-                    until the tenant secret store exists.
-                  </div>
+                  {plan ? (
+                    <div className="alert alert-secondary fs-12 mb-0" id="model-form-no-key-note">
+                      No API key is used: the ledger proxy signs this model in with the Max login, so an agent never holds it.
+                    </div>
+                  ) : (
+                    <div className="alert alert-secondary fs-12 mb-0" id="model-form-no-key-note">
+                      No API key is attached — a model without a key can be hired against and cannot be run
+                      until the tenant secret store exists.
+                    </div>
+                  )}
                 </form>
               </div>
             </div>

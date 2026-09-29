@@ -298,7 +298,8 @@ function present_agent_option(array $a): array
 /** An active model offered on the form (find_models()). */
 function present_model_option(array $m): array
 {
-    return ['id' => (int) $m['model_id'], 'name' => $m['display_name'] . ' (' . $m['harness'] . ')'];
+    $plan = ($m['auth_mode'] ?? 'api_key') === 'claude_subscription' && stripos((string) $m['display_name'], 'max plan') === false ? ' · Max plan' : '';
+    return ['id' => (int) $m['model_id'], 'name' => $m['display_name'] . $plan . ' (' . $m['harness'] . ')'];
 }
 
 /** A library prompt offered on the form (find_active_system_prompt_options()). */

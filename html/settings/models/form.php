@@ -32,7 +32,9 @@ if (wants_json()) {
         // Registering a model ahead of its harness is legitimate, so the form says which
         // harnesses exist rather than hiding the rest; the HIRE is what refuses (runs.php).
         'options' => ['providers' => MODEL_PROVIDERS, 'harnesses' => MODEL_HARNESSES, 'statuses' => MODEL_STATUSES,
-                      'built_harnesses' => built_harnesses()],
+                      'built_harnesses' => built_harnesses(), 'auth_modes' => MODEL_AUTH_MODES,
+                      // Whether the runner has the Max-plan switch on (null = the runner could not be asked).
+                      'subscription' => (static function (): ?bool { $h = runner_request('GET', '/health'); return $h['status'] === 200 ? !empty($h['body']['subscription']) : null; })()],
     ]);
 }
 render_screen(($id === null ? 'Register a model' : 'Edit model') . ' · ' . business_name($pdo),

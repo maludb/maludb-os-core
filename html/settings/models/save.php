@@ -30,6 +30,11 @@ if ($errors !== []) {
     $renderForm($errors);
 }
 
+if ($id !== null && ($current = find_model($pdo, $id)) !== null
+    && ($current['auth_mode'] ?? 'api_key') !== $fields['auth_mode'] && model_in_use($pdo, $id)) {
+    $renderForm(['Agents already use this model, so how it bills cannot change. Register a separate model row for the other way of billing (a Max-plan model is its own row).']);
+}
+
 check_approval($pdo, 'model_save', 'model.save', ($id === null ? 'Register model ' : 'Update model ') . $fields['display_name'], $fields);
 
 try {
@@ -46,7 +51,8 @@ if ($model === []) {
 }
 
 log_activity($pdo, 'model.save', 'model', (int) $model['model_id'], [
-    'after' => ['model_key' => $model['model_key'], 'display_name' => $model['display_name'], 'status' => $model['status']],
+    'after' => ['model_key' => $model['model_key'], 'display_name' => $model['display_name'], 'status' => $model['status'],
+               'auth_mode' => $model['auth_mode'] ?? 'api_key'],
 ]);
 emit_action_status(true, ['did' => 'Saved ' . $model['display_name'], 'refresh' => 'modelChanged']);
 hx_trigger('modelChanged');

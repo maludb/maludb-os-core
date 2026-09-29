@@ -123,6 +123,8 @@ function present_model(array $m): array
         'price_cache_write_per_mtok' => $text('price_cache_write_per_mtok'),
         'currency' => (string) ($m['currency'] ?? 'USD'),
         'status' => (string) ($m['status'] ?? 'active'),
+        // What it bills to (db/164): api_key, or claude_subscription (the owner's Max plan; Claude Code harness only).
+        'auth_mode' => (string) ($m['auth_mode'] ?? 'api_key'),
     ];
 }
 

@@ -48,7 +48,8 @@ export default async function ModelsPage() {
                       <tr id={`model-row-${m.id}`} key={m.id}>
                         <td>
                           <Link href={withBack(`/settings/models/${m.id}/edit`, here)} className="fw-medium">{m.model_key}</Link>
-                          <div className="fs-11 text-muted">{m.display_name}</div>
+                          <div className="fs-11 text-muted">{m.display_name}
+                            {m.auth_mode === "claude_subscription" && <span className="badge bg-soft-warning text-warning ms-2" id={`model-max-plan-${m.id}`}>Max plan</span>}</div>
                         </td>
                         <td className="text-muted fs-12">{ucfirst(m.provider)}</td>
                         <td className="text-muted fs-12">{m.harness}</td>

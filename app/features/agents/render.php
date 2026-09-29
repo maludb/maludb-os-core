@@ -646,7 +646,15 @@ function model_fields_from_request(): array
         'price_cache_write_per_mtok' => request_string('price_cache_write_per_mtok', '0'),
         'currency' => strtoupper(request_string('currency', 'USD')),
         'status' => request_string('status', 'active'),
+        // What the model bills to (db/164): an API key held by the ledger proxy, or the owner's Claude Max login.
+        'auth_mode' => request_string('auth_mode', 'api_key') ?: 'api_key',
     ];
+    if (!in_array($fields['auth_mode'], MODEL_AUTH_MODES, true)) {
+        $errors[] = 'That is not a way a model can bill.';
+    } elseif ($fields['auth_mode'] === 'claude_subscription'
+              && ($fields['provider'] !== 'anthropic' || $fields['harness'] !== 'claude_agent_sdk')) {
+        $errors[] = 'The Claude Max plan is used only by Anthropic models on the claude_agent_sdk harness (the official Claude Code CLI).';
+    }
     if ($fields['model_key'] === '' || mb_strlen($fields['model_key']) > 100) {
         $errors[] = 'A model needs a short unique key, e.g. "claude-opus-5".';
     }

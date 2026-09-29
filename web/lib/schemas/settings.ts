@@ -36,6 +36,8 @@ export const model = z.object({
   price_cache_write_per_mtok: z.string().nullable(),
   currency: z.string(),
   status: z.string(),
+  /** What it bills to (db/164): an API key, or the owner's Claude Max plan (Claude Code harness only). */
+  auth_mode: z.enum(["api_key", "claude_subscription"]).default("api_key"),
 });
 
 export const modelsSettings = z.object({ models: z.array(model), statuses: z.array(z.string()) });
@@ -47,6 +49,8 @@ export const modelFormData = z.object({
     providers: z.array(z.string()), harnesses: z.array(z.string()), statuses: z.array(z.string()),
     // Which harnesses the runner actually has a class for; null when it could not be asked.
     built_harnesses: z.array(z.string()).nullable().optional(),
+    /** Whether the runner has the Max-plan switch on; null when it could not be asked. */
+    subscription: z.boolean().nullable().optional(),
   }),
 });
 export type ModelFormData = z.infer<typeof modelFormData>;
