@@ -35,6 +35,12 @@ here). Applications from us install at `/srv/apps/<catalog_key>`; nothing of HR 
 `/srv/apps/gl/docs/gl-design.md`: the optional accounting application — chart, journal, statements, AR, AP, cash tie-out; the kernel's AI
 statement becomes one bill per provider; owes K13 a catalog seed, K14 an installer guard, K15 the Accounting agents' grants, H1 an HR share). Local clones: `/srv/apps/<key>` (and `~/ZozoCal-Restaurant` for Reservations), each with `origin` on GitHub.
 A new application from us gets a `maludb-os-<key>` repository in the org before anything else; the README's "Repositories" table is the list.
+`maludb-os-cidery` joined 2026-10-04 (the cidery, an `htmx-php-builder` product adopted behind `OS_ENABLED`, public; local clone `/srv/apps/cidery`) and the
+builder plugin moved to `maludb-os-htmx-php-guidelines` (plugin name still `htmx-php-builder`; local clone `~/htmx-php-builder`).
+**The installer learned two manifest keys and the actions server two registry shapes on 2026-10-04 (the cidery adoption):** `database.provision`
+(an idempotent script run instead of `db/*.sql`, with `DB_NAME`/`DB_RW_ROLE`/… in its environment, on every apply), `runtime.python` (`dir`, `venv`,
+`requirements` when not `mcp/venv`); an action's endpoint may carry `{name}` path parameters (resolved like any entity, substituted into the path) and
+`fixed` fields; a resolver may answer an envelope (`rows`/`candidates`/`results`/`items`). Plugin 0.6.0 documents them (`registration.md`).
 **A9 Projects — the second application, complete 2026-09-28** (`/srv/apps/projects`, own repo and CLAUDE.md; design `docs/projects-design.md` there, §13 the
 record): application 50, catalog `projects`, vhost `projects.subello.com` + :8181, MCP 8823/8824, endpoints 20–23, expert agent 59, Scrum Master agent 58,
 `mcp/registries/projects.json` here. **The installer is built (C4/K3):** `bin/app_install.php plan|apply <repository>` — idempotent over every step of the

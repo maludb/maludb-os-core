@@ -222,8 +222,10 @@ installs to under `/srv/apps/`.
 | [maludb-os-hr](https://github.com/maludb/maludb-os-hr) | HR — employment, pay records, leave, reviews; the one application that changes the directory | by default |
 | [maludb-os-projects](https://github.com/maludb/maludb-os-projects) | Projects — backlogs, sprints, kanban; agents as assignees | by default |
 | [maludb-os-helpdesk](https://github.com/maludb/maludb-os-helpdesk) | Help Desk — issues and requests from employees, customers and agents, worked to resolution | by default |
+| [maludb-os-cidery](https://github.com/maludb/maludb-os-cidery) | Cidery — inventory, receiving and production for a cidery; an `htmx-php-builder` product adopted onto the kernel behind `OS_ENABLED` | on request |
 | [maludb-os-txtschedules](https://github.com/maludb/maludb-os-txtschedules) | txtSchedules — restaurant staff scheduling | on request |
 | [maludb-os-reservations](https://github.com/maludb/maludb-os-reservations) | Reservations (ZozoCal) — an existing product adopted onto the kernel (branch `os-adoption`) | on request |
+| [maludb-os-htmx-php-guidelines](https://github.com/maludb/maludb-os-htmx-php-guidelines) | The Claude Code plugin (`htmx-php-builder`) that builds these applications — the stack, design system, PHP patterns and the OS-ready conventions | — |
 | [maludb-os-gl](https://github.com/maludb/maludb-os-gl) | General Ledger — chart of accounts, journal, financial statements, AR, AP, cash management; the kernel's AI statement becomes bills (planned 2026-10-04, private) | on request |
 
 ## Development conventions
