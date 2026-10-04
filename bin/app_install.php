@@ -223,16 +223,23 @@ if (is_file($A . '/composer.json') && !is_dir($A . '/vendor')) {
     [$c, $o] = sh('cd ' . escapeshellarg($A) . ' && composer install --no-dev --optimize-autoloader --no-interaction');
     if ($c !== 0) { stop('dependencies', $o); }
 }
-$hasMcp = glob($A . '/mcp/*.py') !== [] || glob($srcDir . '/mcp/*.py') !== [];
+// The Python runtime: by convention mcp/*.py with mcp/venv and mcp/requirements.txt; an application whose services live
+// elsewhere (an adopted htmx-php-builder application: services/ and services/.venv) says so in maludb-os.json
+// `runtime.python` = {"dir", "venv", "requirements"} (relative to the repository; 2026-10-04).
+$py = (array) ($m['runtime']['python'] ?? []);
+$pyDir = trim((string) ($py['dir'] ?? 'mcp'), '/');
+$pyVenv = trim((string) ($py['venv'] ?? ($pyDir . '/venv')), '/');
+$pyReq = trim((string) ($py['requirements'] ?? ($pyDir . '/requirements.txt')), '/');
+$hasMcp = glob($A . '/' . $pyDir . '/*.py') !== [] || glob($srcDir . '/' . $pyDir . '/*.py') !== [] || glob($A . '/' . $pyDir . '/*/*.py') !== [];
 if ($hasMcp) {
-    if (is_file($A . '/mcp/venv/bin/python')) {
-        say('venv', 'done', $A . '/mcp/venv');
+    if (is_file($A . '/' . $pyVenv . '/bin/python')) {
+        say('venv', 'done', $A . '/' . $pyVenv);
     } else {
-        $req = is_file($A . '/mcp/requirements.txt') ? $A . '/mcp/requirements.txt' : $KERNEL . '/mcp/requirements.txt';
-        say('venv', 'todo', "python3 -m venv {$A}/mcp/venv and install " . basename(dirname($req)) . '/requirements.txt');
-        [$c, $o] = sh('python3 -m venv ' . escapeshellarg($A . '/mcp/venv') . ' && ' . escapeshellarg($A . '/mcp/venv/bin/pip') . ' install -q -r ' . escapeshellarg($req));
+        $req = is_file($A . '/' . $pyReq) ? $A . '/' . $pyReq : $KERNEL . '/mcp/requirements.txt';
+        say('venv', 'todo', "python3 -m venv {$A}/{$pyVenv} and install " . (str_starts_with($req, $A) ? substr($req, strlen($A) + 1) : 'the kernel\'s mcp/requirements.txt'));
+        [$c, $o] = sh('python3 -m venv ' . escapeshellarg($A . '/' . $pyVenv) . ' && ' . escapeshellarg($A . '/' . $pyVenv . '/bin/pip') . ' install -q -r ' . escapeshellarg($req));
         if ($c !== 0) { stop('venv', $o); }
-        sh('chown -R www-data:www-data ' . escapeshellarg($A . '/mcp/venv'), true);
+        sh('chown -R www-data:www-data ' . escapeshellarg($A . '/' . $pyVenv), true);
     }
 }
 
@@ -244,22 +251,49 @@ $passwords = [];
 $migrationsDir = $A . '/' . trim((string) ($m['database']['migrations'] ?? 'db'), '/');
 $migrations = glob($migrationsDir . '/*.sql') ?: glob($srcDir . '/' . trim((string) ($m['database']['migrations'] ?? 'db'), '/') . '/*.sql') ?: [];
 sort($migrations);
+// An application whose schema needs more than "db/*.sql in order as postgres" (roles per file, an extension's memory schema,
+// a seed row — an adopted application) ships an idempotent provisioning script and names it in maludb-os.json
+// `database.provision` (2026-10-04). The installer creates the database and the roles, then runs the script as root with
+// DB_NAME, DB_RW_ROLE, DB_RECORDS_ROLE, DB_ACTIVITY_ROLE, APP_DIR, APP_KEY, APP_NAME and TENANT in its environment; on an
+// existing database it runs it again (the script must be safe to re-run — that is how an upgrade applies new files).
+$provision = (string) ($m['database']['provision'] ?? '');
+$provisionPath = $provision !== '' ? (is_file($A . '/' . $provision) ? $A . '/' . $provision : $srcDir . '/' . $provision) : '';
+if ($provision !== '' && !is_file($provisionPath)) { stop('database', "database.provision names {$provision}, which is not in the repository."); }
+$provisionCmd = static function () use ($provisionPath, $dbName, $roles, $A, $key, $name, $tenant): string {
+    $env = ['DB_NAME' => $dbName, 'DB_RW_ROLE' => (string) $roles['rw'], 'DB_RECORDS_ROLE' => (string) ($roles['records_ro'] ?? ''),
+            'DB_ACTIVITY_ROLE' => (string) ($roles['activity_ro'] ?? ''), 'APP_DIR' => $A, 'APP_KEY' => $key, 'APP_NAME' => $name, 'TENANT' => $tenant];
+    $pairs = [];
+    foreach ($env as $k => $v) { $pairs[] = $k . '=' . escapeshellarg($v); }
+    return 'env ' . implode(' ', $pairs) . ' bash ' . escapeshellarg($provisionPath);
+};
 if ($dbExists) {
-    say('database', 'done', "{$dbName} exists (" . count($migrations) . ' migration files in the repository; an upgrade applies the new ones by hand, in order)');
+    if ($provision !== '') {
+        say('database', 'todo', "{$dbName} exists — re-run {$provision} (idempotent: applies what is new)");
+        [$c, $o] = sh($provisionCmd());
+        if ($APPLY && $c !== 0) { stop('database', "{$provision}: {$o}"); }
+    } else {
+        say('database', 'done', "{$dbName} exists (" . count($migrations) . ' migration files in the repository; an upgrade applies the new ones by hand, in order)');
+    }
 } else {
-    say('database', 'todo', "create {$dbName} owned by {$roles['rw']}, the three roles, then " . count($migrations) . ' migrations in order');
+    say('database', 'todo', "create {$dbName} owned by {$roles['rw']}, the three roles, then " . ($provision !== '' ? "run {$provision}" : count($migrations) . ' migrations in order'));
     foreach ($roles as $r) {
         [$c, $o] = psql("DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '{$r}') THEN CREATE ROLE {$r} LOGIN; END IF; END \$\$;");
         if ($APPLY && $c !== 0) { stop('database', $o); }
     }
     [$c, $o] = psql("CREATE DATABASE {$dbName} OWNER {$roles['rw']}");
     if ($APPLY && $c !== 0) { stop('database', $o); }
-    foreach ($migrations as $f) {
-        if (!$APPLY) { continue; }
-        [$c, $o] = q('runuser -u postgres -- psql -v ON_ERROR_STOP=1 -q -d ' . escapeshellarg($dbName) . ' -f ' . escapeshellarg($f));
-        if ($c !== 0) { stop('database', basename($f) . ": {$o}"); }
+    if ($provision !== '') {
+        [$c, $o] = sh($provisionCmd());
+        if ($APPLY && $c !== 0) { stop('database', "{$provision}: {$o}"); }
+        if ($APPLY) { say('database', 'ok', "{$provision} ran"); }
+    } else {
+        foreach ($migrations as $f) {
+            if (!$APPLY) { continue; }
+            [$c, $o] = q('runuser -u postgres -- psql -v ON_ERROR_STOP=1 -q -d ' . escapeshellarg($dbName) . ' -f ' . escapeshellarg($f));
+            if ($c !== 0) { stop('database', basename($f) . ": {$o}"); }
+        }
+        if ($APPLY) { say('database', 'ok', count($migrations) . ' migrations applied'); }
     }
-    if ($APPLY) { say('database', 'ok', count($migrations) . ' migrations applied'); }
 }
 // Role passwords: set when the application has no .env yet (a fresh install, or a database made by hand) — never printed.
 $needPasswords = !isset($existingEnv['DB_PASSWORD']) || $existingEnv['DB_PASSWORD'] === '';

@@ -24,6 +24,7 @@ a name in a param becomes an id by calling the application's find_* tool with th
 from __future__ import annotations
 
 import json
+from urllib.parse import quote
 import logging
 import pathlib
 from typing import Optional
@@ -67,6 +68,12 @@ async def resolve_via_mcp(url: str, token: str, tool: str, params: dict) -> list
             res = await s.call_tool(tool, {"params": params})
             text = res.content[0].text if res.content else ""
             rows = json.loads(text) if text else []
+            if isinstance(rows, dict):
+                # An application whose tools answer an envelope (cidery: {"count", "rows": [...]}, or candidates for an
+                # ambiguous label) — the list inside is the answer.
+                for key in ("rows", "candidates", "results", "items"):
+                    if isinstance(rows.get(key), list):
+                        return rows[key]
             return rows if isinstance(rows, list) else [rows]
 
 
@@ -122,11 +129,18 @@ def register(mcp, app_post, action_token, taken: set[str]) -> int:
 def _make_tool(mcp, app_post, action_token, action: dict, base: str, app_key: str, app_name: str,
                param_entity: dict, resolve_map: dict, records_url: str | None) -> None:
     fields: dict = {}
+    # Path parameters (2026-10-04, the cidery adoption): an endpoint written "/vessels/{vessel}/status" names the entity in its
+    # path — the htmx-php-builder convention /{feature}/{id}/{verb}. Each {name} is a required parameter, resolved like any
+    # other entity, substituted into the path and not posted as a field.
+    path_params = re.findall(r"\{([a-z][a-z0-9_]*)\}", str(action.get("endpoint") or ""))
+    for pname in path_params:
+        hint = next((p.get("note") or p.get("hint") or "" for p in (action.get("params") or []) if p.get("name") == pname), "")
+        fields[pname] = (str, Field(..., description=hint or f"the {pname.replace('_', ' ')}"))
     for param in action.get("params") or []:
         pname = param.get("name")
         if not pname or pname in fields:
             continue
-        note = param.get("note") or ""
+        note = param.get("note") or param.get("hint") or ""
         fields[pname] = (str, Field(..., description=note)) if param.get("required") else (Optional[str], Field(None, description=note))
     if action.get("confirm"):
         fields["confirmed"] = (bool, Field(False, description="Set true only after the user has explicitly agreed in this conversation."))
@@ -165,6 +179,14 @@ def _make_tool(mcp, app_post, action_token, action: dict, base: str, app_key: st
                 fields_out[pname] = str(value)
         if action.get("partial"):
             fields_out["_partial"] = "1"
+        for key, value in (action.get("fixed") or {}).items():       # a manifest row that fixes a field ("state (event=clean)")
+            fields_out.setdefault(key, str(value))
+        path = endpoint
+        for pname in path_params:
+            value = fields_out.pop(pname, None)
+            if value is None or value == "":
+                return json.dumps({"status": "error", "message": f"{pname} is required for {action['action']}."})
+            path = path.replace("{" + pname + "}", quote(str(value), safe=""))
 
         # The approval hook: the kernel decides before the application is asked.
         if action.get("approval"):
@@ -172,7 +194,7 @@ def _make_tool(mcp, app_post, action_token, action: dict, base: str, app_key: st
                 "action_key": action["action"], "log_event": action.get("log_event") or action.get("log") or action["action"],
                 "summary": f"{action['action'].replace('_', ' ')} in {app_name}",
                 "parameters": json.dumps(fields_out), "body": json.dumps(fields_out),
-                "handler_url": base + endpoint,
+                "handler_url": base + path,
                 "amount": fields_out.get("amount", ""), "currency": fields_out.get("currency", ""),
             })
             if gate.get("status") == "pending_approval":
@@ -186,7 +208,7 @@ def _make_tool(mcp, app_post, action_token, action: dict, base: str, app_key: st
             if gate.get("status") == "recorded":        # an evaluation: the hook itself was not sent; nor is the action
                 return json.dumps({**gate, "would_have_called": base + endpoint, "application": app_key, "action": action["action"]})
 
-        result = await app_post(endpoint, fields_out, base=base)
+        result = await app_post(path, fields_out, base=base)
         if result.get("status") == "pending_approval" or (isinstance(result.get("message"), str) and "pending_approval" in str(result)):
             result["status"] = "pending_approval"
         if resolved:
