@@ -31,7 +31,9 @@ here). Applications from us install at `/srv/apps/<catalog_key>`; nothing of HR 
 **Repositories (organized 2026-10-04):** everything of the OS is under `github.com/maludb` — the kernel `maludb-os-core` (this repo, public), the plugin
 `maludb-os-integration` (public), and one repository per application named `maludb-os-<catalog_key>`: `maludb-os-hr`, `maludb-os-projects`,
 `maludb-os-helpdesk` (the three defaults, public), `maludb-os-txtschedules` and `maludb-os-reservations` (ZozoCal, adopted; its OS work is the
-`os-adoption` branch) (private). Local clones: `/srv/apps/<key>` (and `~/ZozoCal-Restaurant` for Reservations), each with `origin` on GitHub.
+`os-adoption` branch) (private); `maludb-os-cidery` (adopted, another session) and `maludb-os-gl` (**General Ledger — planned 2026-10-04**, private,
+`/srv/apps/gl/docs/gl-design.md`: the optional accounting application — chart, journal, statements, AR, AP, cash tie-out; the kernel's AI
+statement becomes one bill per provider; owes K13 a catalog seed, K14 an installer guard, K15 the Accounting agents' grants, H1 an HR share). Local clones: `/srv/apps/<key>` (and `~/ZozoCal-Restaurant` for Reservations), each with `origin` on GitHub.
 A new application from us gets a `maludb-os-<key>` repository in the org before anything else; the README's "Repositories" table is the list.
 **A9 Projects — the second application, complete 2026-09-28** (`/srv/apps/projects`, own repo and CLAUDE.md; design `docs/projects-design.md` there, §13 the
 record): application 50, catalog `projects`, vhost `projects.subello.com` + :8181, MCP 8823/8824, endpoints 20–23, expert agent 59, Scrum Master agent 58,

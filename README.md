@@ -224,6 +224,7 @@ installs to under `/srv/apps/`.
 | [maludb-os-helpdesk](https://github.com/maludb/maludb-os-helpdesk) | Help Desk — issues and requests from employees, customers and agents, worked to resolution | by default |
 | [maludb-os-txtschedules](https://github.com/maludb/maludb-os-txtschedules) | txtSchedules — restaurant staff scheduling | on request |
 | [maludb-os-reservations](https://github.com/maludb/maludb-os-reservations) | Reservations (ZozoCal) — an existing product adopted onto the kernel (branch `os-adoption`) | on request |
+| [maludb-os-gl](https://github.com/maludb/maludb-os-gl) | General Ledger — chart of accounts, journal, financial statements, AR, AP, cash management; the kernel's AI statement becomes bills (planned 2026-10-04, private) | on request |
 
 ## Development conventions
 
