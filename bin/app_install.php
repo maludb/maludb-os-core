@@ -391,9 +391,19 @@ if ($vhostSrc === null) {
     } else {
         say('vhost', 'todo', (is_file($target) ? 'update ' : 'install ') . $target . ', a2ensite, configtest, reload' . $note);
         if ($APPLY) {
+            // Never leave Apache with a broken config on disk (the 2026-10-02 outage; the cidery apply of 2026-10-04 stopped on a
+            // directive whose module was not enabled): keep the previous file, test the new one enabled, and on failure put the
+            // previous one back (or disable a new site) BEFORE stopping — a later reload or restart must still succeed.
+            $previous = is_file($target) ? (string) file_get_contents($target) : null;
+            $wasEnabled = is_link('/etc/apache2/sites-enabled/' . $key . '.conf');
             if (@file_put_contents($target, $rendered) === false) { stop('vhost', "could not write {$target}"); }
             [$c, $o] = sh("a2ensite -q {$key} && apachectl configtest");
-            if ($c !== 0) { stop('vhost', $o); }
+            if ($c !== 0) {
+                if ($previous !== null) { file_put_contents($target, $previous); } else { @unlink($target); }
+                if (!$wasEnabled) { sh("a2dissite -q {$key}", true); }
+                [$c2, $o2] = sh('apachectl configtest', true);
+                stop('vhost', trim($o) . "\n" . ($previous !== null ? 'the previous vhost was put back' : 'the new site was disabled again') . ' — Apache\'s config is ' . ($c2 === 0 ? 'valid' : 'STILL INVALID: ' . trim($o2)) . '. Fix deploy/' . basename($vhostSrc) . ' (a directive may need a module: apache2ctl -M) and run apply again.');
+            }
             sh('systemctl reload apache2');
         }
     }
