@@ -227,6 +227,7 @@ installs to under `/srv/apps/`.
 | [maludb-os-reservations](https://github.com/maludb/maludb-os-reservations) | Reservations (ZozoCal) — an existing product adopted onto the kernel (branch `os-adoption`) | on request |
 | [maludb-os-htmx-php-guidelines](https://github.com/maludb/maludb-os-htmx-php-guidelines) | The Claude Code plugin (`htmx-php-builder`) that builds these applications — the stack, design system, PHP patterns and the OS-ready conventions | — |
 | [maludb-os-gl](https://github.com/maludb/maludb-os-gl) | General Ledger — chart of accounts, journal, financial statements, AR, AP, cash management; the kernel's AI statement becomes bills (planned 2026-10-04, private) | on request |
+| [maludb-os-consultant-tracking](https://github.com/maludb/maludb-os-consultant-tracking) | Consultant Tracking — professional-services time, expenses with receipts, AI hosting and model-usage pass-through, T&M and fixed-bid invoicing for a technical/AI consultancy; the accounting system reads it through K7 (planned 2026-10-04, private; catalog key `consultant_tracking`, DNS label `consulting`) | on request |
 
 ## Development conventions
 
