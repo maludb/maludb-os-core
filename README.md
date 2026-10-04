@@ -206,8 +206,24 @@ An application from us:
 6. exports token accounting through the kernel's **ledger period export**.
 
 The installer is `bin/app_install.php plan|apply <repository>` (`plan` is read-only; `apply` is run by a person with root) and
-`bin/install_default_applications.sh`. The contract is documented in `docs/business-os-integration.md` and the `kernel-*.md` specs in
-`docs/build-specs/`.
+`bin/install_default_applications.sh`, which installs the three default applications straight from GitHub. The contract is documented
+in `docs/business-os-integration.md` and the `kernel-*.md` specs in `docs/build-specs/`.
+
+### Repositories
+
+Everything that is part of the OS lives under [github.com/maludb](https://github.com/maludb). The kernel is `maludb-os-core`;
+every application is `maludb-os-<catalog_key>`, where `catalog_key` is the key its `maludb-os.json` declares and the directory it
+installs to under `/srv/apps/`.
+
+| Repository | What it is | Installed |
+|---|---|---|
+| [maludb-os-core](https://github.com/maludb/maludb-os-core) | The kernel (this repository) | always |
+| [maludb-os-integration](https://github.com/maludb/maludb-os-integration) | The Claude Code plugin that fits an application to the kernel (`os-integration`, `os-adopt`, `os-install`) | — |
+| [maludb-os-hr](https://github.com/maludb/maludb-os-hr) | HR — employment, pay records, leave, reviews; the one application that changes the directory | by default |
+| [maludb-os-projects](https://github.com/maludb/maludb-os-projects) | Projects — backlogs, sprints, kanban; agents as assignees | by default |
+| [maludb-os-helpdesk](https://github.com/maludb/maludb-os-helpdesk) | Help Desk — issues and requests from employees, customers and agents, worked to resolution | by default |
+| [maludb-os-txtschedules](https://github.com/maludb/maludb-os-txtschedules) | txtSchedules — restaurant staff scheduling | on request |
+| [maludb-os-reservations](https://github.com/maludb/maludb-os-reservations) | Reservations (ZozoCal) — an existing product adopted onto the kernel (branch `os-adoption`) | on request |
 
 ## Development conventions
 

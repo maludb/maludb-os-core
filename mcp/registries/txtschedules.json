@@ -4,10 +4,152 @@
     "name": "txtSchedules",
     "base_url": "http://127.0.0.1:8101",
     "records_url": "https://txtschedules.subello.com/mcp/records",
-    "resolve": [],
+    "resolve": {
+        "site": {
+            "tool": "find_sites",
+            "query_param": "q",
+            "id_field": "site_id",
+            "label_field": "name",
+            "params": [
+                "site",
+                "main_site"
+            ]
+        },
+        "position": {
+            "tool": "find_positions",
+            "query_param": "q",
+            "id_field": "position_id",
+            "label_field": "name",
+            "params": [
+                "position"
+            ]
+        },
+        "member": {
+            "tool": "find_staff",
+            "query_param": "q",
+            "id_field": "member_id",
+            "label_field": "display_name",
+            "params": [
+                "member",
+                "colleague",
+                "assignee"
+            ]
+        },
+        "shift": {
+            "tool": "week_schedule",
+            "query_param": "q",
+            "id_field": "shift_id",
+            "label_field": "label",
+            "params": [
+                "shift",
+                "swap_shift"
+            ]
+        },
+        "exchange": {
+            "tool": "marketplace",
+            "query_param": "q",
+            "id_field": "exchange_id",
+            "label_field": "label",
+            "params": [
+                "exchange"
+            ]
+        },
+        "week": {
+            "tool": "week_schedule",
+            "query_param": "q",
+            "id_field": "week_id",
+            "label_field": "label",
+            "params": [
+                "week",
+                "from_week",
+                "to_week"
+            ]
+        },
+        "template": {
+            "tool": "find_templates",
+            "query_param": "q",
+            "id_field": "template_id",
+            "label_field": "name",
+            "params": [
+                "template"
+            ]
+        },
+        "time_off_type": {
+            "tool": "site_settings",
+            "query_param": "q",
+            "id_field": "type_id",
+            "label_field": "name",
+            "params": [
+                "time_off_type"
+            ]
+        },
+        "day_part": {
+            "tool": "site_settings",
+            "query_param": "q",
+            "id_field": "day_part_id",
+            "label_field": "name",
+            "params": [
+                "day_part"
+            ]
+        },
+        "availability": {
+            "tool": "availability",
+            "query_param": "q",
+            "id_field": "availability_id",
+            "label_field": "label",
+            "params": [
+                "availability"
+            ]
+        },
+        "blackout": {
+            "tool": "time_off",
+            "query_param": "q",
+            "id_field": "blackout_id",
+            "label_field": "label",
+            "params": [
+                "blackout"
+            ]
+        },
+        "request": {
+            "tool": "time_off",
+            "query_param": "q",
+            "id_field": "request_id",
+            "label_field": "label",
+            "params": [
+                "request"
+            ]
+        },
+        "rule": {
+            "tool": "site_rules",
+            "query_param": "q",
+            "id_field": "rule_key",
+            "label_field": "name",
+            "params": [
+                "rule"
+            ]
+        },
+        "announcement": {
+            "tool": "announcements",
+            "query_param": "q",
+            "id_field": "announcement_id",
+            "label_field": "title",
+            "params": [
+                "announcement"
+            ]
+        },
+        "certification": {
+            "tool": "certifications",
+            "query_param": "q",
+            "id_field": "certification_id",
+            "label_field": "label",
+            "params": [
+                "certification"
+            ]
+        }
+    },
     "registry": {
         "generated_from": "docs/business-os-action-manifest.md",
-        "generated_at": "2026-09-28T22:49:42+00:00",
+        "generated_at": "2026-09-29T19:14:25+00:00",
         "screens": {
             "dashboard": {
                 "screen": "dashboard",
@@ -15,7 +157,7 @@
                 "section": "Home and settings",
                 "when": "their home: the next shift with who else is on, the week, what waits for them, announcements",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "settings": {
@@ -26,7 +168,7 @@
                 "params": [
                     "tab"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "tokens": {
@@ -35,7 +177,7 @@
                 "section": "Home and settings",
                 "when": "their own access tokens for the two MCP servers",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "activity": {
@@ -49,7 +191,7 @@
                     "entity_id",
                     "period"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "my-schedule": {
@@ -61,7 +203,7 @@
                     "week",
                     "view"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "team-schedule": {
@@ -75,7 +217,7 @@
                     "day",
                     "position"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "shift-view": {
@@ -84,7 +226,7 @@
                 "section": "Shifts and the marketplace",
                 "when": "one shift: when and where, who is on with them, its trade if any, its history, offer or swap or give it",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "marketplace": {
@@ -96,7 +238,7 @@
                     "site",
                     "kind"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "exchange-view": {
@@ -105,7 +247,7 @@
                 "section": "Shifts and the marketplace",
                 "when": "one trade: the shift, the claims, the warnings, and to decide it",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "approvals": {
@@ -117,7 +259,7 @@
                     "site",
                     "kind"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "coverage": {
@@ -128,7 +270,7 @@
                 "params": [
                     "shift"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "my-requests": {
@@ -139,7 +281,7 @@
                 "params": [
                     "state"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "builder": {
@@ -153,7 +295,7 @@
                     "view",
                     "position"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "day-view": {
@@ -165,7 +307,7 @@
                     "site",
                     "date"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "shift-add": {
@@ -179,7 +321,7 @@
                     "date",
                     "assignee"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "shift-edit": {
@@ -188,7 +330,7 @@
                 "section": "The week builder",
                 "when": "to change a shift's times or position or person",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "templates-list": {
@@ -199,7 +341,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "template-view": {
@@ -208,7 +350,19 @@
                 "section": "The week builder",
                 "when": "one template: its shifts by weekday, and start a week from it",
                 "params": [],
-                "built": false,
+                "built": true,
+                "stub": false
+            },
+            "week-publish": {
+                "screen": "week-publish",
+                "url": "/weeks/publish-confirm",
+                "section": "The week builder",
+                "when": "the summary before publishing a week: shifts, people told, open shifts left, every warning, the reason box",
+                "params": [
+                    "site",
+                    "week"
+                ],
+                "built": true,
                 "stub": false
             },
             "availability": {
@@ -220,7 +374,7 @@
                     "member",
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "time-off": {
@@ -235,7 +389,7 @@
                     "from",
                     "to"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "time-off-add": {
@@ -248,7 +402,7 @@
                     "from",
                     "to"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "time-off-view": {
@@ -257,7 +411,7 @@
                 "section": "Availability and time off",
                 "when": "one request and its decision",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "balances": {
@@ -269,7 +423,7 @@
                     "member",
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "staff-list": {
@@ -282,7 +436,7 @@
                     "q",
                     "position"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "staff-view": {
@@ -291,7 +445,7 @@
                 "section": "People and positions",
                 "when": "one person: positions and certifications and hours and time off; pay for whoever may see it",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "staff-edit": {
@@ -300,7 +454,7 @@
                 "section": "People and positions",
                 "when": "to change a person's main restaurant or limits or positions",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "positions-list": {
@@ -311,7 +465,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "position-add": {
@@ -322,7 +476,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "position-edit": {
@@ -331,7 +485,7 @@
                 "section": "People and positions",
                 "when": "to change a position",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "certifications": {
@@ -344,7 +498,7 @@
                     "state",
                     "position"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "certification-kind-add": {
@@ -355,7 +509,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "certification-kind-edit": {
@@ -364,7 +518,7 @@
                 "section": "People and positions",
                 "when": "to change a certification kind: its name and expiry and warning days and the positions that need it",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "my-certifications": {
@@ -373,7 +527,7 @@
                 "section": "People and positions",
                 "when": "their own certifications on the phone — see them and add one and correct one",
                 "params": [],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "forecast": {
@@ -385,7 +539,7 @@
                     "site",
                     "week"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "budget": {
@@ -397,7 +551,7 @@
                     "site",
                     "week"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "announcements-list": {
@@ -408,7 +562,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "announcement-add": {
@@ -420,7 +574,7 @@
                     "site",
                     "audience"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "site-settings": {
@@ -431,7 +585,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "day-parts": {
@@ -442,7 +596,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "time-off-types": {
@@ -453,7 +607,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "rules": {
@@ -464,7 +618,7 @@
                 "params": [
                     "site"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             },
             "reports": {
@@ -479,7 +633,7 @@
                     "to",
                     "format"
                 ],
-                "built": false,
+                "built": true,
                 "stub": false
             }
         },
@@ -519,7 +673,7 @@
                 "approval": null,
                 "log_event": "prefs.save",
                 "who": "own",
-                "built": false
+                "built": true
             },
             "calendar_feed_rotate": {
                 "action": "calendar_feed_rotate",
@@ -531,7 +685,7 @@
                 "approval": null,
                 "log_event": "calendar_feed.rotate",
                 "who": "own",
-                "built": false
+                "built": true
             },
             "token_mint": {
                 "action": "token_mint",
@@ -556,7 +710,7 @@
                 "approval": null,
                 "log_event": "token.mint",
                 "who": "own",
-                "built": false
+                "built": true
             },
             "token_revoke": {
                 "action": "token_revoke",
@@ -575,7 +729,7 @@
                 "approval": null,
                 "log_event": "token.revoke",
                 "who": "own",
-                "built": false
+                "built": true
             },
             "shift_offer": {
                 "action": "shift_offer",
@@ -600,7 +754,7 @@
                 "approval": null,
                 "log_event": "exchange.offer",
                 "who": "staff (the holder)",
-                "built": false
+                "built": true
             },
             "shift_give": {
                 "action": "shift_give",
@@ -631,7 +785,7 @@
                 "approval": null,
                 "log_event": "exchange.give",
                 "who": "staff (the holder)",
-                "built": false
+                "built": true
             },
             "shift_swap": {
                 "action": "shift_swap",
@@ -668,7 +822,7 @@
                 "approval": null,
                 "log_event": "exchange.swap",
                 "who": "staff (the holder)",
-                "built": false
+                "built": true
             },
             "shift_open": {
                 "action": "shift_open",
@@ -693,7 +847,7 @@
                 "approval": null,
                 "log_event": "exchange.open",
                 "who": "lead",
-                "built": false
+                "built": true
             },
             "coverage_request": {
                 "action": "coverage_request",
@@ -724,7 +878,7 @@
                 "approval": "external_send",
                 "log_event": "exchange.coverage",
                 "who": "lead",
-                "built": false
+                "built": true
             },
             "shift_pickup": {
                 "action": "shift_pickup",
@@ -743,7 +897,7 @@
                 "approval": null,
                 "log_event": "exchange.claim",
                 "who": "staff (main restaurant)",
-                "built": false
+                "built": true
             },
             "claim_withdraw": {
                 "action": "claim_withdraw",
@@ -762,7 +916,7 @@
                 "approval": null,
                 "log_event": "exchange.withdraw",
                 "who": "own (the claimant)",
-                "built": false
+                "built": true
             },
             "exchange_choose": {
                 "action": "exchange_choose",
@@ -787,7 +941,7 @@
                 "approval": "other",
                 "log_event": "exchange.choose",
                 "who": "approve",
-                "built": false
+                "built": true
             },
             "exchange_accept": {
                 "action": "exchange_accept",
@@ -806,7 +960,7 @@
                 "approval": null,
                 "log_event": "exchange.accept",
                 "who": "own (the named colleague)",
-                "built": false
+                "built": true
             },
             "exchange_refuse": {
                 "action": "exchange_refuse",
@@ -825,7 +979,7 @@
                 "approval": null,
                 "log_event": "exchange.refuse",
                 "who": "own (the named colleague)",
-                "built": false
+                "built": true
             },
             "exchange_approve": {
                 "action": "exchange_approve",
@@ -850,7 +1004,7 @@
                 "approval": "other",
                 "log_event": "exchange.approve",
                 "who": "approve",
-                "built": false
+                "built": true
             },
             "exchange_decline": {
                 "action": "exchange_decline",
@@ -875,7 +1029,7 @@
                 "approval": null,
                 "log_event": "exchange.decline",
                 "who": "approve",
-                "built": false
+                "built": true
             },
             "exchange_cancel": {
                 "action": "exchange_cancel",
@@ -894,7 +1048,7 @@
                 "approval": null,
                 "log_event": "exchange.cancel",
                 "who": "own (who made it)",
-                "built": false
+                "built": true
             },
             "week_create": {
                 "action": "week_create",
@@ -919,7 +1073,7 @@
                 "approval": null,
                 "log_event": "week.create",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "week_copy": {
                 "action": "week_copy",
@@ -944,7 +1098,7 @@
                 "approval": null,
                 "log_event": "week.copy",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "week_autofill": {
                 "action": "week_autofill",
@@ -969,7 +1123,7 @@
                 "approval": null,
                 "log_event": "week.autofill",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "week_clear": {
                 "action": "week_clear",
@@ -988,7 +1142,7 @@
                 "approval": null,
                 "log_event": "week.clear",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "week_publish": {
                 "action": "week_publish",
@@ -1013,7 +1167,7 @@
                 "approval": "external_send",
                 "log_event": "week.publish",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "shift_create": {
                 "action": "shift_create",
@@ -1074,7 +1228,7 @@
                 "approval": null,
                 "log_event": "shift.create",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "shift_update": {
                 "action": "shift_update",
@@ -1141,7 +1295,7 @@
                 "approval": null,
                 "log_event": "shift.update",
                 "who": "build",
-                "built": false,
+                "built": true,
                 "partial": true
             },
             "shift_assign": {
@@ -1173,7 +1327,7 @@
                 "approval": null,
                 "log_event": "shift.assign",
                 "who": "build or lead",
-                "built": false
+                "built": true
             },
             "shift_delete": {
                 "action": "shift_delete",
@@ -1192,7 +1346,7 @@
                 "approval": null,
                 "log_event": "shift.delete",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "shift_add": {
                 "action": "shift_add",
@@ -1253,7 +1407,7 @@
                 "approval": "other",
                 "log_event": "shift.add",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "shift_change": {
                 "action": "shift_change",
@@ -1314,7 +1468,7 @@
                 "approval": "other",
                 "log_event": "shift.change",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "shift_cancel": {
                 "action": "shift_cancel",
@@ -1339,7 +1493,7 @@
                 "approval": "other",
                 "log_event": "shift.cancel",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "template_save": {
                 "action": "template_save",
@@ -1376,7 +1530,7 @@
                 "approval": null,
                 "log_event": "template.save",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "template_apply": {
                 "action": "template_apply",
@@ -1401,7 +1555,7 @@
                 "approval": null,
                 "log_event": "template.apply",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "template_archive": {
                 "action": "template_archive",
@@ -1420,7 +1574,7 @@
                 "approval": null,
                 "log_event": "template.archive",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "availability_submit": {
                 "action": "availability_submit",
@@ -1481,7 +1635,7 @@
                 "approval": null,
                 "log_event": "availability.submit",
                 "who": "own (a manager for anyone)",
-                "built": false
+                "built": true
             },
             "availability_remove": {
                 "action": "availability_remove",
@@ -1500,7 +1654,7 @@
                 "approval": null,
                 "log_event": "availability.remove",
                 "who": "own or build",
-                "built": false
+                "built": true
             },
             "availability_approve": {
                 "action": "availability_approve",
@@ -1525,7 +1679,7 @@
                 "approval": null,
                 "log_event": "availability.approve",
                 "who": "approve",
-                "built": false
+                "built": true
             },
             "availability_decline": {
                 "action": "availability_decline",
@@ -1550,7 +1704,7 @@
                 "approval": null,
                 "log_event": "availability.decline",
                 "who": "approve",
-                "built": false
+                "built": true
             },
             "time_off_request": {
                 "action": "time_off_request",
@@ -1605,7 +1759,7 @@
                 "approval": null,
                 "log_event": "timeoff.request",
                 "who": "own (a manager for anyone)",
-                "built": false
+                "built": true
             },
             "time_off_approve": {
                 "action": "time_off_approve",
@@ -1623,6 +1777,12 @@
                         "required": false,
                         "repeated": false,
                         "hint": ""
+                    },
+                    {
+                        "name": "open_shifts",
+                        "required": false,
+                        "repeated": false,
+                        "hint": "yes also opens the published shifts the time off covers"
                     }
                 ],
                 "undo": "time_off_cancel",
@@ -1630,7 +1790,7 @@
                 "approval": "other",
                 "log_event": "timeoff.approve",
                 "who": "approve",
-                "built": false
+                "built": true
             },
             "time_off_decline": {
                 "action": "time_off_decline",
@@ -1655,7 +1815,7 @@
                 "approval": null,
                 "log_event": "timeoff.decline",
                 "who": "approve",
-                "built": false
+                "built": true
             },
             "time_off_cancel": {
                 "action": "time_off_cancel",
@@ -1674,7 +1834,7 @@
                 "approval": null,
                 "log_event": "timeoff.cancel",
                 "who": "own or approve",
-                "built": false
+                "built": true
             },
             "balance_adjust": {
                 "action": "balance_adjust",
@@ -1711,7 +1871,7 @@
                 "approval": "other",
                 "log_event": "balance.adjust",
                 "who": "pay",
-                "built": false
+                "built": true
             },
             "time_off_type_save": {
                 "action": "time_off_type_save",
@@ -1766,7 +1926,7 @@
                 "approval": null,
                 "log_event": "timeoff_type.save",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "time_off_type_archive": {
                 "action": "time_off_type_archive",
@@ -1785,7 +1945,7 @@
                 "approval": null,
                 "log_event": "timeoff_type.archive",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "blackout_save": {
                 "action": "blackout_save",
@@ -1816,7 +1976,7 @@
                 "approval": null,
                 "log_event": "blackout.save",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "blackout_remove": {
                 "action": "blackout_remove",
@@ -1835,7 +1995,7 @@
                 "approval": null,
                 "log_event": "blackout.remove",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "staff_save": {
                 "action": "staff_save",
@@ -1896,7 +2056,7 @@
                 "approval": null,
                 "log_event": "staff.save",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "wage_update": {
                 "action": "wage_update",
@@ -1927,7 +2087,7 @@
                 "approval": "other",
                 "log_event": "wage.update",
                 "who": "pay",
-                "built": false
+                "built": true
             },
             "certification_add": {
                 "action": "certification_add",
@@ -1970,7 +2130,7 @@
                 "approval": null,
                 "log_event": "certification.add",
                 "who": "own (a manager for anyone)",
-                "built": false
+                "built": true
             },
             "certification_update": {
                 "action": "certification_update",
@@ -2005,7 +2165,7 @@
                 "approval": null,
                 "log_event": "certification.update",
                 "who": "own (a manager for anyone)",
-                "built": false
+                "built": true
             },
             "certification_remove": {
                 "action": "certification_remove",
@@ -2024,7 +2184,7 @@
                 "approval": null,
                 "log_event": "certification.remove",
                 "who": "own (a manager for anyone)",
-                "built": false
+                "built": true
             },
             "certification_verify": {
                 "action": "certification_verify",
@@ -2049,7 +2209,7 @@
                 "approval": "other",
                 "log_event": "certification.verify",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "certification_kind_save": {
                 "action": "certification_kind_save",
@@ -2098,7 +2258,7 @@
                 "approval": null,
                 "log_event": "certification_kind.save",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "certification_kind_archive": {
                 "action": "certification_kind_archive",
@@ -2117,7 +2277,7 @@
                 "approval": null,
                 "log_event": "certification_kind.archive",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "position_save": {
                 "action": "position_save",
@@ -2172,7 +2332,7 @@
                 "approval": null,
                 "log_event": "position.save",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "position_rate_update": {
                 "action": "position_rate_update",
@@ -2197,7 +2357,7 @@
                 "approval": "other",
                 "log_event": "wage.update",
                 "who": "pay",
-                "built": false
+                "built": true
             },
             "position_archive": {
                 "action": "position_archive",
@@ -2216,7 +2376,7 @@
                 "approval": null,
                 "log_event": "position.archive",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "budget_save": {
                 "action": "budget_save",
@@ -2259,7 +2419,7 @@
                 "approval": null,
                 "log_event": "budget.update",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "forecast_save": {
                 "action": "forecast_save",
@@ -2296,7 +2456,7 @@
                 "approval": null,
                 "log_event": "forecast.update",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "forecast_copy": {
                 "action": "forecast_copy",
@@ -2327,7 +2487,7 @@
                 "approval": null,
                 "log_event": "forecast.copy",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "forecast_fill": {
                 "action": "forecast_fill",
@@ -2358,7 +2518,7 @@
                 "approval": null,
                 "log_event": "forecast.fill",
                 "who": "build",
-                "built": false
+                "built": true
             },
             "ratio_save": {
                 "action": "ratio_save",
@@ -2395,7 +2555,7 @@
                 "approval": null,
                 "log_event": "ratio.update",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "announcement_post": {
                 "action": "announcement_post",
@@ -2450,7 +2610,7 @@
                 "approval": "external_send",
                 "log_event": "announcement.post",
                 "who": "announce",
-                "built": false
+                "built": true
             },
             "announcement_remove": {
                 "action": "announcement_remove",
@@ -2469,7 +2629,7 @@
                 "approval": null,
                 "log_event": "announcement.remove",
                 "who": "announce or admin",
-                "built": false
+                "built": true
             },
             "announcement_read": {
                 "action": "announcement_read",
@@ -2488,7 +2648,7 @@
                 "approval": null,
                 "log_event": "announcement.read",
                 "who": "own",
-                "built": false
+                "built": true
             },
             "site_settings_save": {
                 "action": "site_settings_save",
@@ -2615,7 +2775,7 @@
                 "approval": null,
                 "log_event": "settings.update",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "day_part_save": {
                 "action": "day_part_save",
@@ -2670,7 +2830,7 @@
                 "approval": null,
                 "log_event": "day_part.save",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "day_part_archive": {
                 "action": "day_part_archive",
@@ -2689,7 +2849,7 @@
                 "approval": null,
                 "log_event": "day_part.archive",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "rule_save": {
                 "action": "rule_save",
@@ -2726,7 +2886,7 @@
                 "approval": null,
                 "log_event": "rule.update",
                 "who": "admin",
-                "built": false
+                "built": true
             },
             "rule_preset_apply": {
                 "action": "rule_preset_apply",
@@ -2751,7 +2911,7 @@
                 "approval": null,
                 "log_event": "rule.preset",
                 "who": "admin",
-                "built": false
+                "built": true
             }
         }
     }

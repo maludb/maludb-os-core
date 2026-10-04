@@ -28,11 +28,16 @@ reference `scoped-applications.md` for multi-site and multi-department applicati
 **A8 HR lives in its own repository, `/srv/apps/hr`** (its own CLAUDE.md; design `docs/hr-design.md` there; **complete 2026-09-23**:
 application 39, catalog `hr` kind `ours`, vhost `hr.subello.com` + :8180, endpoints 15–18, expert agent 48, `mcp/registries/hr.json`
 here). Applications from us install at `/srv/apps/<catalog_key>`; nothing of HR is built in this repo.
+**Repositories (organized 2026-10-04):** everything of the OS is under `github.com/maludb` — the kernel `maludb-os-core` (this repo, public), the plugin
+`maludb-os-integration` (public), and one repository per application named `maludb-os-<catalog_key>`: `maludb-os-hr`, `maludb-os-projects`,
+`maludb-os-helpdesk` (the three defaults, public), `maludb-os-txtschedules` and `maludb-os-reservations` (ZozoCal, adopted; its OS work is the
+`os-adoption` branch) (private). Local clones: `/srv/apps/<key>` (and `~/ZozoCal-Restaurant` for Reservations), each with `origin` on GitHub.
+A new application from us gets a `maludb-os-<key>` repository in the org before anything else; the README's "Repositories" table is the list.
 **A9 Projects — the second application, complete 2026-09-28** (`/srv/apps/projects`, own repo and CLAUDE.md; design `docs/projects-design.md` there, §13 the
 record): application 50, catalog `projects`, vhost `projects.subello.com` + :8181, MCP 8823/8824, endpoints 20–23, expert agent 59, Scrum Master agent 58,
 `mcp/registries/projects.json` here. **The installer is built (C4/K3):** `bin/app_install.php plan|apply <repository>` — idempotent over every step of the
 plugin's runbook; `plan` is read-only, `apply` is root and the owner's to run here (the classifier refuses it, like `deploy.sh`);
-`bin/install_default_applications.sh` (K4) installs HR then Projects with agents hired and standing departments granted;
+`bin/install_default_applications.sh` (K4) installs the defaults — HR, Projects, Help Desk — from `https://github.com/maludb/maludb-os-<key>.git` unless given a directory, with agents hired and standing departments granted;
 `bin/hire_application_agent.php --app <key> --agent <key>` hires any agent an application's `maludb-os.json` declares. **Fixed 2026-09-28:** the
 actions server asked the approval hook about an action's KEY, not its log event, so no application action ever paused — `mcp/application_actions.py`. `hr.subello.com` resolves
 to this host through `/etc/hosts` until the owner's DNS and proxy entries exist.
