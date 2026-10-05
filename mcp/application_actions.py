@@ -24,6 +24,7 @@ a name in a param becomes an id by calling the application's find_* tool with th
 from __future__ import annotations
 
 import json
+import re
 from urllib.parse import quote
 import logging
 import pathlib
