@@ -11,6 +11,8 @@ import json
 import logging
 from decimal import Decimal
 
+import uuid
+
 import asyncpg
 
 from . import config, run_token
@@ -265,20 +267,47 @@ async def write_ledger(*, run: dict, status: str, provider_request_id: str | Non
             INSERT INTO prompt_ledger (agent_run_id, agent_member_id, acting_member_id, location_id, harness,
                    sdk_version, provider, model_id, provider_model_id, request_id, provider_request_id,
                    call_kind, status, error_code, error_message, input_tokens, output_tokens,
-                   cache_read_tokens, cache_write_tokens, latency_ms, cost, currency, billing, notional_cost)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$22,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$23,$24)
+                   cache_read_tokens, cache_write_tokens, latency_ms, cost, currency, billing, notional_cost,
+                   application_id)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$22,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$23,$24,$25)
             RETURNING id""",
             run["id"], run["agent_member_id"], run["acting_member_id"], run["location_id"], run["harness"],
             run["sdk_version"], model["provider"], model["id"], model["provider_model_id"], run["request_id"],
             provider_request_id, status, error_code, (error_message or None) and error_message[:2000],
             tokens["input"], tokens["output"], tokens["cache_read"], tokens["cache_write"], latency_ms,
-            cost, model.get("currency") or "USD", call_kind, billing, notional)
+            cost, model.get("currency") or "USD", call_kind, billing, notional, run.get("application_id"))
         await con.execute("""
             INSERT INTO prompt_payloads (ledger_id, context, response, byte_size, sha256)
             VALUES ($1, $2::jsonb, $3::jsonb, $4, $5)""",
             ledger_id, json.dumps(context, default=str), json.dumps(response, default=str), len(body),
             hashlib.sha256(body).hexdigest())
     return ledger_id
+
+
+async def app_credential_for_proxy(token_hash: str) -> dict | None:
+    """K24 (db/171): what the proxy needs about an APPLICATION's own model call — shaped like run_for_proxy's answer
+    (`id` None: no agent run behind it; `agent_member_id` None) plus the models it may name. The model itself is
+    chosen from the request body by the proxy, so `model` is None here."""
+    p = await pool()
+    async with p.acquire() as con:
+        row = await con.fetchrow("SELECT * FROM app_model_credential_resolve($1)", token_hash)
+        if row is None:
+            return None
+        models = [dict(m) for m in await con.fetch(
+            "SELECT * FROM model_registry WHERE id = ANY($1::bigint[]) AND status = 'active' AND auth_mode = 'api_key'",
+            list(row["allowed_model_ids"]))]
+    return {"id": None, "is_application": True, "application_id": row["application_id"],
+            "application_name": row["application_name"], "credential_id": row["credential_id"],
+            "agent_member_id": None, "acting_member_id": row["acting_member_id"], "location_id": None,
+            "harness": "application", "sdk_version": None, "request_id": f"app-{row['application_id']}-{uuid.uuid4().hex[:16]}",
+            "model_id": None, "model": None, "allowed_models": models, "call_kind": "messages",
+            "monthly_budget_amount": row["monthly_budget_amount"]}
+
+
+async def application_month_cost(application_id: int) -> Decimal:
+    p = await pool()
+    async with p.acquire() as con:
+        return Decimal(str(await con.fetchval("SELECT application_model_month_cost($1)", application_id)))
 
 
 async def add_content_flags(agent_member_id: int, run_id: int | None, flags: list[dict]) -> None:

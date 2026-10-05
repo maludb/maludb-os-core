@@ -18,6 +18,7 @@ is cut.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import time
@@ -32,6 +33,7 @@ from starlette.routing import Route
 from . import config, pricing, run_token, store
 
 log = logging.getLogger("ledger_proxy")
+APP_KEY_PREFIX = "appm_"
 ZERO = {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0}
 DROP_REQUEST_HEADERS = {"host", "authorization", "x-api-key", "content-length", "accept-encoding", "connection"}
 unledgered_runs: set[int] = set()      # runs with a call the ledger could not record; the runner fails them
@@ -61,14 +63,38 @@ async def _authenticate(request: Request, wire: str):
         if judge is None:
             return None, _error(wire, 401, "authentication_error", "That evaluation is not running.")
         return judge, None
+    # K24: an APPLICATION's own model call (an engine behind it — MaluDB's extraction, embedding and answers). Its credential
+    # is shown once and only its hash is kept (db/171); it is confined to the models it names and an optional monthly cap.
+    token = presented.strip()
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
+    if token.startswith(APP_KEY_PREFIX):
+        app = await store.app_credential_for_proxy(hashlib.sha256(token.encode()).hexdigest())
+        if app is None:
+            return None, _error(wire, 401, "authentication_error", "Unknown, revoked or expired application credential.")
+        return app, None
     return None, _error(wire, 401, "authentication_error", "Unknown or expired run key.")
 
 
-def _upstream(run: dict, wire: str) -> tuple[str, dict]:
+def _pick_model(run: dict, asked) -> dict | None:
+    """The registered model an application credential may call: named by the registry key or the provider's id."""
+    for m in run.get("allowed_models") or []:
+        if asked in (m["provider_model_id"], m["model_key"]):
+            return m
+    return None
+
+
+async def _spent(run: dict) -> Decimal:
+    if run.get("is_application"):
+        return await store.application_month_cost(run["application_id"])
+    return await store.month_to_date_cost(run["agent_member_id"])
+
+
+def _upstream(run: dict, wire: str, path: str | None = None) -> tuple[str, dict]:
     model = run["model"]
     key_env, default_base, _ = config.PROVIDERS.get(model["provider"], ("", "", wire))
     base = (model.get("endpoint_url") or default_base).rstrip("/")
-    path = "/v1/messages" if wire == "anthropic" else "/v1/chat/completions"
+    path = path or ("/v1/messages" if wire == "anthropic" else "/v1/chat/completions")
     if model.get("auth_mode") == "claude_subscription":
         # The owner's Max login: the token replaces the run's key exactly as an API key would. It is the ONLY thing changed;
         # the client's own headers (identity, betas) travel untouched, and the agent never holds the token.
@@ -165,11 +191,13 @@ def _status_for(code: int) -> str:
     return "ok" if code < 400 else "rate_limited" if code == 429 else "error"
 
 
-async def _forward(request: Request, wire: str) -> Response:
+async def _forward(request: Request, wire: str, *, embeddings: bool = False) -> Response:
     run, refusal = await _authenticate(request, wire)
     if refusal is not None:
         return refusal
-    if run["model"].get("auth_mode") == "claude_subscription" and (
+    if embeddings and not run.get("is_application"):
+        return _error(wire, 403, "permission_error", "Embeddings are an application credential's alone.")
+    if run.get("model") and run["model"].get("auth_mode") == "claude_subscription" and (
             wire != "anthropic" or run.get("harness") != "claude_agent_sdk" or not config.subscription_enabled()):
         return _error(wire, 403, "permission_error", "Claude subscription use is switched off, or this is not the official Claude Code client on the Anthropic wire.")
     started = time.monotonic()
@@ -179,18 +207,27 @@ async def _forward(request: Request, wire: str) -> Response:
     except ValueError:
         return _error(wire, 400, "invalid_request_error", "The request body is not JSON.")
 
+    if run.get("is_application"):
+        # K24: the caller names the model, but only among those the credential was minted for — a call whose ledger row
+        # could not name what it spent on is never made.
+        run["model"] = _pick_model(run, body.get("model"))
+        if run["model"] is None:
+            return _error(wire, 403, "permission_error", "That model is not allowed for this application credential.")
+        run["model_id"] = run["model"]["id"]
+        run["call_kind"] = "embedding" if embeddings else "messages"
     # Budget, BEFORE forwarding. This read is also the ledger's pre-flight: if the database is
     # down it raises, the call is not forwarded, and nothing goes unrecorded.
     budget = run.get("monthly_budget_amount")
-    if budget is not None and await store.month_to_date_cost(run["agent_member_id"]) >= budget:
+    if budget is not None and await _spent(run) >= budget:
+        who = "application" if run.get("is_application") else "agent"
         await _record(run, wire, status="refused", started=started, context=body, response=None,
-                      error_code="budget_exhausted", error_message="Monthly budget exhausted for this agent.")
-        return _error(wire, 402, "budget_exhausted", "Monthly budget exhausted for this agent.")
+                      error_code="budget_exhausted", error_message=f"Monthly budget exhausted for this {who}.")
+        return _error(wire, 402, "budget_exhausted", f"Monthly budget exhausted for this {who}.")
 
     body["model"] = run["model"]["provider_model_id"]
     if wire == "openai" and body.get("stream"):
         body.setdefault("stream_options", {})["include_usage"] = True
-    url, auth = _upstream(run, wire)
+    url, auth = _upstream(run, wire, "/v1/embeddings" if embeddings else None)
     # A harness may qualify the call with a query string — the Claude Code CLI asks for
     # /v1/messages?beta=true — and dropping it would silently change what was asked for. The path
     # is ours (the route decided the wire); the query is the caller's and travels with it.
@@ -348,11 +385,23 @@ async def messages(request: Request) -> Response:
     return await _forward(request, "anthropic")
 
 
+async def embeddings(request: Request) -> Response:
+    return await _forward(request, "openai", embeddings=True)
+
+
 async def models(request: Request) -> Response:
     wire = request.path_params["wire"]
     run, refusal = await _authenticate(request, wire)
     if refusal is not None:
         return refusal
+    if run.get("is_application"):      # an application credential may name any of its allowed models
+        listed = [{"id": m["provider_model_id"], "object": "model", "type": "model", "display_name": m["display_name"]}
+                  for m in run["allowed_models"]]
+        wanted = request.path_params.get("model_id")
+        if wanted is None:
+            return JSONResponse({"object": "list", "data": listed, "has_more": False})
+        hit = next((e for e in listed if e["id"] == wanted), None)
+        return JSONResponse(hit) if hit else _error(wire, 404, "not_found_error", "No such model.")
     model_id = run["model"]["provider_model_id"]
     entry = {"id": model_id, "object": "model", "type": "model", "display_name": run["model"]["display_name"]}
     wanted = request.path_params.get("model_id")
@@ -368,6 +417,7 @@ async def not_found(request: Request) -> Response:
 app = Starlette(routes=[
     Route("/openai/v1/chat/completions", chat_completions, methods=["POST"]),
     Route("/anthropic/v1/messages", messages, methods=["POST"]),
+    Route("/openai/v1/embeddings", embeddings, methods=["POST"]),
     Route("/openrouter/api/v1/systemone", systemone, methods=["POST"]),
     Route("/{wire:str}/v1/models", models, methods=["GET"]),
     Route("/{wire:str}/v1/models/{model_id:path}", models, methods=["GET"]),
