@@ -2,7 +2,7 @@
 # Install the default applications beside the kernel (Projects' K4, 2026-09-28; Help Desk added and the
 # repositories named 2026-10-04): the tenant provisioning script's last step, and the command for a kernel
 # that was provisioned before the defaults existed. Each application is installed by bin/app_install.php
-# from its repository — HR, then Projects, then Help Desk — with every standing department granted its
+# from its repository — HR, then Projects, then Help Desk, then Spaces (K21, 2026-10-05) — with every standing department granted its
 # member role at write and its declared agents hired (the owner's rule for the defaults: hired on install,
 # not merely proposed). Run as root on the kernel host.
 #
@@ -17,7 +17,7 @@ set -euo pipefail
 K=$(cd "$(dirname "$0")/.." && pwd)
 SRC=https://github.com/maludb
 if [[ $# -gt 0 && "$1" != --* ]]; then SRC=$1; shift; fi
-DEFAULTS=(hr projects helpdesk)
+DEFAULTS=(hr projects helpdesk spaces)
 for key in "${DEFAULTS[@]}"; do
     if [[ "$SRC" =~ ^(https?://|git@|ssh://) ]]; then
         repo="${SRC%/}/maludb-os-${key}.git"
