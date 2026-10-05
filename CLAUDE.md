@@ -22,8 +22,11 @@ and its **period export** (the kernel keeps token accounting with dollar costs o
 accounting system is an optional application). **HR is the first application** — not before the kernel's
 sign-on (A3) and directory API (A4) exist. The design and the exact inventory of the cut:
 `docs/business-os-integration.md` (live: https://claude.ai/code/artifact/7f923c54-5189-41ee-bdb0-95cd6610ccfa).
-The application-side contract: the `maludb-os-integration` plugin **0.4.2** (`~/maludb-os-integration`, skills `os-integration`, `os-adopt`, `os-install`;
-reference `scoped-applications.md` for multi-site and multi-department applications). Build order: build plan phase 7, Part A
+The application-side contract: the `maludb-os-integration` plugin **0.7.0** (`~/maludb-os-integration`, skills `os-integration`, `os-adopt`, `os-install`;
+reference `scoped-applications.md` for multi-site and multi-department applications; **`shared-schema.md` (2026-10-05): the estate has ONE data model in many
+databases** — Phase 1 surveys the siblings' `db/*.sql`, reuses the canonical table verbatim (extend by appending), reads data another application owns through
+K7 instead of copying it, and every table is still created by the application's own migrations because installations hold different applications;
+`htmx-php-builder` 0.7.0 applies it in `new-app` Phase 1 and `os-application`). Build order: build plan phase 7, Part A
 (A1 the cut → A2 hosts → A3 sign-on → A4 directory API → A5 ledger → A6 chat endpoint → A7 owed items → A8 HR).
 **A8 HR lives in its own repository, `/srv/apps/hr`** (its own CLAUDE.md; design `docs/hr-design.md` there; **complete 2026-09-23**:
 application 39, catalog `hr` kind `ours`, vhost `hr.subello.com` + :8180, endpoints 15–18, expert agent 48, `mcp/registries/hr.json`
