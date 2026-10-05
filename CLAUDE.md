@@ -44,6 +44,11 @@ builder plugin moved to `maludb-os-htmx-php-guidelines` (plugin name still `htmx
 (an idempotent script run instead of `db/*.sql`, with `DB_NAME`/`DB_RW_ROLE`/… in its environment, on every apply), `runtime.python` (`dir`, `venv`,
 `requirements` when not `mcp/venv`); an action's endpoint may carry `{name}` path parameters (resolved like any entity, substituted into the path) and
 `fixed` fields; a resolver may answer an envelope (`rows`/`candidates`/`results`/`items`). Plugin 0.6.0 documents them (`registration.md`).
+**The installer's `mail` step (2026-10-05):** when a manifest names `MALUMAIL_API_KEY`, `MAIL_FROM`, `MAIL_FROM_NAME` (required or optional) and the
+application's `config/.env` lacks them, `apply` writes them — the key from `~/.malumail` of the person installing (one line, the key, or env-style
+lines; the sudo user's home, then `$HOME`, then the kernel owner's), else the kernel's own `config/.env`; the sender from the same, else
+`no-reply@<domain>` and the application's name; in place when the line is there and empty; the key is never printed; no key anywhere is a note,
+not a stop. Documented in the plugin's `os-install` skill and runbook and `registration.md` (`env.optional`).
 **A9 Projects — the second application, complete 2026-09-28** (`/srv/apps/projects`, own repo and CLAUDE.md; design `docs/projects-design.md` there, §13 the
 record): application 50, catalog `projects`, vhost `projects.subello.com` + :8181, MCP 8823/8824, endpoints 20–23, expert agent 59, Scrum Master agent 58,
 `mcp/registries/projects.json` here. **The installer is built (C4/K3):** `bin/app_install.php plan|apply <repository>` — idempotent over every step of the

@@ -107,6 +107,56 @@ function env_quote(string $v): string
 {
     return preg_match('/[\s#"\']/', $v) ? '"' . str_replace('"', '\"', $v) . '"' : $v;
 }
+/** K=V into the text of an env file: in place when the key is already there (set or empty), else appended. */
+function env_lines_set(string $lines, string $k, string $v): string
+{
+    $line = $k . '=' . env_quote($v);
+    $n = 0;
+    $out = (string) preg_replace_callback('/^' . preg_quote($k, '/') . '=.*$/m', static fn (): string => $line, $lines, 1, $n);
+    if ($n > 0) { return $out; }
+    return ($lines === '' ? '' : rtrim($lines) . "\n") . $line . "\n";
+}
+/**
+ * The business's MaluMail sending key and sender, for an application's config/.env. The key comes from `~/.malumail` of the
+ * person installing — the sudo user's home, then $HOME, then the kernel directory's owner's home; the file is one line (the key)
+ * or env-style lines (MALUMAIL_API_KEY, MAIL_FROM, MAIL_FROM_NAME) — else from the kernel's own config/.env. The sender
+ * (MAIL_FROM, MAIL_FROM_NAME) comes from the same file, else the kernel's config/.env, else is left empty for the caller's
+ * default. Answers the three keys ('' when unknown) and `source`, a path or phrase for the report — the key itself is never printed.
+ */
+function malumail_values(array $kernelEnv, string $kernelDir): array
+{
+    $homes = [];
+    $su = (string) getenv('SUDO_USER');
+    if ($su !== '' && ($pw = @posix_getpwnam($su)) && !empty($pw['dir'])) { $homes[] = (string) $pw['dir']; }
+    if (($h = (string) getenv('HOME')) !== '') { $homes[] = $h; }
+    if (($uid = @fileowner($kernelDir)) !== false && ($pw = @posix_getpwuid((int) $uid)) && !empty($pw['dir'])) { $homes[] = (string) $pw['dir']; }
+    $found = [];
+    $source = '';
+    foreach (array_unique($homes) as $home) {
+        $path = rtrim($home, '/') . '/.malumail';
+        if (!is_readable($path)) { continue; }
+        $text = trim((string) file_get_contents($path));
+        if ($text === '') { continue; }
+        if (preg_match('/^[A-Z][A-Z0-9_]*=/m', $text)) {
+            $found = env_file_read($path);
+        } else {
+            foreach (preg_split('/\R/', $text) ?: [] as $line) {
+                $line = trim($line);
+                if ($line !== '' && $line[0] !== '#') { $found = ['MALUMAIL_API_KEY' => $line]; break; }
+            }
+        }
+        if (!empty($found['MALUMAIL_API_KEY'])) { $source = $path; break; }
+        $found = [];
+    }
+    $key = (string) ($found['MALUMAIL_API_KEY'] ?? '');
+    if ($key === '' && !empty($kernelEnv['MALUMAIL_API_KEY'])) { $key = (string) $kernelEnv['MALUMAIL_API_KEY']; $source = "the kernel's config/.env"; }
+    return [
+        'MALUMAIL_API_KEY' => $key,
+        'MAIL_FROM' => (string) ($found['MAIL_FROM'] ?? $kernelEnv['MAIL_FROM'] ?? ''),
+        'MAIL_FROM_NAME' => (string) ($found['MAIL_FROM_NAME'] ?? $kernelEnv['MAIL_FROM_NAME'] ?? ''),
+        'source' => $source,
+    ];
+}
 function http_status(string $url, string $host = ''): int
 {
     $ch = curl_init($url);
@@ -344,8 +394,31 @@ if ($passwords !== []) {
 if (!empty($m['identity']['enabled_env'])) { $values[(string) $m['identity']['enabled_env']] = '1'; }
 $missing = array_values(array_filter($required, static fn (string $k): bool => !isset($existingEnv[$k]) || $existingEnv[$k] === ''));
 $missing = array_values(array_diff($missing, ['OS_APPLICATION_TOKEN']));    // minted in step 9
+// MaluMail: the mail keys the manifest names (required or optional) that config/.env lacks or leaves empty — the key from the
+// installer's ~/.malumail or the kernel's config/.env (malumail_values()), the sender from the same or the business's default.
+$mailKeys = ['MALUMAIL_API_KEY', 'MAIL_FROM', 'MAIL_FROM_NAME'];
+$mailable = array_values(array_intersect($mailKeys, array_merge($required, (array) ($m['env']['optional'] ?? []))));
+$mailMissing = array_values(array_filter($mailable, static fn (string $k): bool => !isset($existingEnv[$k]) || $existingEnv[$k] === ''));
+if ($mailable !== []) {
+    $mail = malumail_values($kernelEnv, $KERNEL);
+    $keyKnown = $mail['MALUMAIL_API_KEY'] !== '' || (isset($existingEnv['MALUMAIL_API_KEY']) && $existingEnv['MALUMAIL_API_KEY'] !== '');
+    if ($mailMissing === []) {
+        say('mail', 'done', 'config/.env carries the MaluMail key and the sender');
+    } elseif (!$keyKnown) {
+        say('mail', 'note', 'no MaluMail key: put it in ~/.malumail (one line) or the kernel\'s config/.env and apply again — the application sends no mail until MALUMAIL_API_KEY is set');
+        $mailMissing = [];
+    } else {
+        $values['MALUMAIL_API_KEY'] = $mail['MALUMAIL_API_KEY'];
+        $values['MAIL_FROM'] = $mail['MAIL_FROM'] !== '' ? $mail['MAIL_FROM'] : 'no-reply@' . $domain;
+        $values['MAIL_FROM_NAME'] = $mail['MAIL_FROM_NAME'] !== '' ? $mail['MAIL_FROM_NAME'] : $name;
+        say('mail', 'todo', 'write ' . implode(', ', $mailMissing) . ' to config/.env'
+            . (in_array('MALUMAIL_API_KEY', $mailMissing, true) ? ' (the key from ' . $mail['source'] . ', never shown)' : ''));
+    }
+}
+$missing = array_values(array_diff($missing, $mailMissing));    // a required mail key is written by the mail step, not left empty
+$write = array_values(array_unique(array_merge($missing, $mailMissing)));
 if ($missing === []) {
-    say('config', 'done', 'config/.env carries every required key');
+    say('config', 'done', array_intersect($mailMissing, $required) === [] ? 'config/.env carries every required key' : 'config/.env carries every required key but the mail keys, which the mail step writes');
 } else {
     // The MaluDB token is minted for the application by proving the tenant's memory login; failing that, the kernel's is shared.
     if (in_array('MALUDB_API_TOKEN', $missing, true)) {
@@ -363,13 +436,13 @@ if ($missing === []) {
     }
     $unknown = array_values(array_filter($missing, static fn (string $k): bool => !isset($values[$k])));
     say('config', 'todo', 'write ' . count($missing) . ' missing keys to config/.env' . ($unknown !== [] ? ' — no value known for ' . implode(', ', $unknown) . ' (left empty; fill them in)' : ''));
-    if ($APPLY) {
-        $lines = is_file($envPath) ? rtrim((string) file_get_contents($envPath)) . "\n" : '';
-        foreach ($missing as $k) { $lines .= $k . '=' . env_quote((string) ($values[$k] ?? '')) . "\n"; }
-        if (@file_put_contents($envPath, $lines) === false) { stop('config', "could not write {$envPath}"); }
-        $owner = (string) (getenv('SUDO_USER') ?: 'root');
-        sh('chown ' . escapeshellarg($owner) . ':www-data ' . escapeshellarg($envPath) . ' && chmod 640 ' . escapeshellarg($envPath), true);
-    }
+}
+if ($write !== [] && $APPLY) {
+    $lines = is_file($envPath) ? (string) file_get_contents($envPath) : '';
+    foreach ($write as $k) { $lines = env_lines_set($lines, $k, (string) ($values[$k] ?? '')); }
+    if (@file_put_contents($envPath, $lines) === false) { stop('config', "could not write {$envPath}"); }
+    $owner = (string) (getenv('SUDO_USER') ?: 'root');
+    sh('chown ' . escapeshellarg($owner) . ':www-data ' . escapeshellarg($envPath) . ' && chmod 640 ' . escapeshellarg($envPath), true);
 }
 $env = $APPLY ? env_file_read($envPath) : ($existingEnv + $values);
 
