@@ -110,6 +110,8 @@ $profiles = [
     ],
 ];
 $heading = preg_match('/^#\s+(.+)$/m', $jobDescription, $m) ? trim($m[1]) : ucfirst(str_replace('_', ' ', $agentKey));
+// "# Knowledge Librarian — job description" names the agent, not the document: the suffix is dropped.
+$heading = trim((string) preg_replace('/\s*[—–-]\s*job description\s*$/iu', '', $heading));
 $profile = $profiles[$agentKey] ?? [
     'name' => $heading, 'job_title' => $heading . ' (' . $appName . ')', 'role_key' => $agentKey,
     'description' => 'Ships with ' . $appName . ': ' . $heading . '.', 'duties' => [],

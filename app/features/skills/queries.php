@@ -37,8 +37,8 @@ function create_skill_assignment(PDO $pdo, array $f, int $by): array
                                            agent_member_id, application_id, note, assigned_by)
             VALUES (:name, :pin, :scope, :dept, :role, :agent, :app, :note, :by) RETURNING *
         SQL);
-        $st->execute(['name' => $f['skill_name'], 'pin' => $f['pinned_bundle_hash'], 'scope' => $f['scope_kind'],
-                      'dept' => $f['department_id'], 'role' => $f['role_key'], 'agent' => $f['agent_member_id'],
+        $st->execute(['name' => $f['skill_name'], 'pin' => $f['pinned_bundle_hash'] ?? null, 'scope' => $f['scope_kind'],
+                      'dept' => $f['department_id'] ?? null, 'role' => $f['role_key'] ?? null, 'agent' => $f['agent_member_id'] ?? null,
                       'app' => $f['application_id'] ?? null, 'note' => $f['note'], 'by' => $by]);
         return [$st->fetch(), null];
     } catch (PDOException $ex) {
