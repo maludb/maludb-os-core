@@ -365,6 +365,9 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
 
 ## Useful commands
 
+- **Fresh install on a new Ubuntu 24.04 host: `docs/install.md`** (written and proven 2026-10-06: all 154 migrations apply clean on
+  an empty database; `bin/bootstrap_organizer.php` now makes a SUPER-ADMIN — before that day it made a plain user, which locked a fresh
+  install out of `os.`; `config/.env.example` documents every key; `mcp/registries/*.json` are install-specific and gitignored).
 - Migrations: `sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/NNN_*.sql`
 - Service check: `systemctl status 'certstudy-*'`
 - MCP smoke test: mint token `php bin/mint_mcp_token.php --email ... --label ...`, then POST

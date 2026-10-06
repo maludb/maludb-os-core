@@ -103,46 +103,34 @@ landing/     static landing page for the bare domain
 
 - **PHP 8.3** — vanilla, feature-oriented page controllers with procedural PDO queries (no framework); Composer dependencies in `composer.json`.
 - **PostgreSQL 17** — row-level security, security-barrier views, additive migrations.
-- **Next.js 15 / React 19 / TypeScript** — Bootstrap 5.3 “nxl” look for day-to-day screens.
-- **Python 3 (FastMCP, asyncpg, uvicorn)** — MCP servers and the agent runner (`mcp/requirements.txt`).
+- **Next.js 15 / React 19 / TypeScript** on Node 24 — Bootstrap 5.3 “nxl” look for day-to-day screens.
+- **Python 3.12 (FastMCP, asyncpg, uvicorn)** — MCP servers and the agent runner (`mcp/requirements.txt`).
 - **MaluDB** — activity memory (`maludb_core` Postgres extension plus its API service).
 - **Apache 2.4** reverse proxy, **systemd** services, **cron** for the few scheduled PHP jobs.
 
 ## Getting started
 
-These steps assume Ubuntu with Apache, PHP 8.3 (with `pdo_pgsql`), PostgreSQL 17, Node 20+ and Python 3.11+.
-Production hosts are provisioned from the files in `docs/deploy/`; treat this as a development outline.
+**The fresh-install runbook is [`docs/install.md`](docs/install.md)** — Ubuntu 24.04, from an empty host to a signed-in
+super-admin with the kernel's agents hired and the default applications installed, every step followed by its check,
+written so a person or a Claude Code session with `sudo` can execute it. In outline:
 
-```bash
-git clone https://github.com/maludb/maludb-os-core.git /var/www
-cd /var/www
-
-# 1. PHP dependencies
-composer install
-
-# 2. Configuration — fill in every blank value
-cp config/.env.example config/.env
-cp web/.env.example web/.env.local
-
-# 3. Database: create the `certstudy` database and its roles, then run the migrations in order
-sudo -u postgres createdb certstudy
-for f in db/*.sql; do sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f "$f"; done
-#   (read db/000_extensions_roles.sql first: it creates the app_rw / app_records_ro / app_activity_ro roles
-#    and expects you to set their passwords; a few files are documented as one-off and are not additive)
-
-# 4. First organizer (super-admin)
-php bin/bootstrap_organizer.php --email you@example.com --name "Your Name"   # prints a generated password once
-
-# 5. Front end
-cd web && npm ci && npm run build && npm start     # serves :3000
-
-# 6. MCP servers and agent runner
-python3 -m venv mcp/venv && mcp/venv/bin/pip install -r mcp/requirements.txt
-```
-
-Then install the Apache vhosts (`docs/deploy/apache-react-cutover.conf`, `apache-mcp-proxy.conf`), the systemd units
-(`docs/deploy/*.service`), and the cron table (`docs/deploy/crontab.example`). For the agent runner see
-`docs/deploy/runner.env.example`, `hermes-install.md` and `claude-agent-install.md`.
+1. **The host** — MaluDB core's bootstrap first (it brings PostgreSQL 17 from PGDG, pgvector, pgaudit and builds the
+   `maludb_core` extension), then Apache + PHP 8.3 (`libapache2-mod-php8.3`, `php8.3-pgsql` …), Composer, Node 24.
+2. **MaluDB** — the API service (:8000) and the kernel's own memory database `certstudy_memory` (schema and role
+   `certstudy_mem`, `enable_memory_schema`, `grant_memory_access`), then a token from `POST /v1/tokens`.
+3. **The code** — clone to `/var/www`, `composer install --no-dev`, `storage/` for `www-data`, `config/.env` (mode 640,
+   group `www-data`) from `config/.env.example`, which documents **every** key the code reads.
+4. **The database** — `createdb certstudy`, then `db/*.sql` in order as `postgres` (all 154 apply clean on an empty
+   database); passwords for `app_rw`, `app_records_ro`, `app_activity_ro`, `app_runner`.
+5. **Apache** — `docs/deploy/apache-react-cutover.conf` with your domain, `Listen 127.0.0.1:8080`, the PHP ini.
+6. **The front end** — `npm ci && npm run build`, hand `.next` to `www-data`, the unit and its host drop-in.
+7. **MCP servers and the activity ingest** — one venv from `mcp/requirements.txt`, five units and a timer.
+8. **The agent runner** — `bos-runner`/`bos-agent`, the sandboxed launcher, `/etc/business-os/runner.env` (provider keys
+   live only there), the pinned Claude Code CLI and its conformance suite.
+9. **First super-admin** (`bin/bootstrap_organizer.php`), a model on the Claude harness, the business's settings, cron.
+10. **The kernel's agents** — the Installer (`bin/hire_installation_agent.php`), the JEV prompt writer, the Auditor and
+    Sysadmin in shadow, the embedding model for memory.
+11. **The default applications** — `sudo bin/install_default_applications.sh --by <email> --domain <domain>`.
 
 **Migrations are numbered and additive**: never edit an applied file, add the next number. Views keep
 `WITH (security_barrier = true)`, and new columns are appended last.
@@ -206,7 +194,7 @@ An application from us:
 6. exports token accounting through the kernel's **ledger period export**.
 
 The installer is `bin/app_install.php plan|apply <repository>` (`plan` is read-only; `apply` is run by a person with root) and
-`bin/install_default_applications.sh`, which installs the three default applications straight from GitHub. The contract is documented
+`bin/install_default_applications.sh`, which installs the four default applications (HR, Projects, Help Desk, Spaces) straight from GitHub. The contract is documented
 in `docs/business-os-integration.md` and the `kernel-*.md` specs in `docs/build-specs/`.
 
 ### Repositories
@@ -253,7 +241,7 @@ installs to under `/srv/apps/`.
 | Kernel specs (sign-on, directory API, ledger, chat, scopes, roles, services) | `docs/build-specs/kernel-*.md` |
 | Agent runtime, evals, skills | `docs/build-specs/agent-*.md`, `eval-*.md`, `system-one-harness.md`, `skill-library.md` |
 | React migration record | `docs/react-migration-plan.md`, `docs/react-cutover-runbook.md` |
-| Deployment files | `docs/deploy/` |
+| Fresh install runbook, deployment files | `docs/install.md`, `docs/deploy/` |
 | Action manifest and MCP tool surface | `docs/business-os-action-manifest.md`, `docs/business-os-mcp-tool-surface.md` |
 
 ## Security

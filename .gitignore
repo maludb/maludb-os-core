@@ -30,3 +30,7 @@ __pycache__/
 claude-log/
 /config/.env.bak*
 *.env.bak*
+
+# Application registries (mcp/registries/<app_key>.json) are written by bin/app_install.php for
+# THIS installation — they carry its hosts and loopback ports. The README there stays tracked.
+/mcp/registries/*.json
