@@ -62,8 +62,8 @@ POST {OS_INTERNAL_URL}/api/v1/apps/read.php       Bearer <consumer's application
 - **Sites:** for a `scoped` share the consumer names a kernel `location_id`; the kernel checks that **both**
   applications serve that location (a live scope of each) and passes the provider **its own** `scope_id` for it as
   the argument `scope_id`. An unscoped share takes no location.
-- **The call:** the kernel's `mcp_call_tool_as_kernel()` (C5) against the provider's MCP endpoints in order; 10 s
-  timeout; the answer passed back unchanged, capped at 256 kB.
+- **The call:** the kernel's `mcp_call_tool_as_kernel()` (C5) against the provider's MCP endpoints in order; the share's
+  own timeout (K26, below; 8 s unless declared); the answer passed back unchanged, capped at 256 kB.
 - **Records:** `application.read` in the activity log (consumer, provider, tool, location, outcome, milliseconds —
   never the answer); the call counts toward nothing else.
 - **A tool about people (db/162, owner 2026-09-28):** a share flagged `"people": true` answers about members, keyed by the
@@ -73,7 +73,30 @@ POST {OS_INTERNAL_URL}/api/v1/apps/read.php       Bearer <consumer's application
   connection was approved before the tool was marked. Otherwise the same gates: an approved connection, the site both
   serve. The provider answers only about people at the named site.
 - **What it is not:** no writes between applications (a consumer that must change another application asks a person);
-  no member identity crosses (a provider's shared tool answers about the site, not about who asked).
+  no member identity crosses (a provider's shared tool answers about the site, not about who asked) — the one identity
+  that does cross is the consuming application's own (K26).
+
+### K26 — the provider is told who is asking, and a share may ask for a longer call (owner approved 2026-10-06; db/173)
+
+Three applications needed it: Knowledge gates a share by the bases shared *with that application*; Spaces answers a share as the
+consumer's expert agent and had to take the agent's id from the consumer's own word; Inventory found the same gap. Until K26 the
+kernel passed a provider nothing but the arguments and the site.
+
+- **Who is asking travels in two HTTP headers on every message of the kernel's MCP call**, set by `application_read()` from the
+  consumer's own row — never from what the consumer sent: `X-OS-Consumer: <the consumer's app key>` and, when the consumer has an
+  expert, `X-OS-Consumer-Agent: <applications.sme_agent_member_id>`. Headers, not arguments, because six of the seven providers
+  validate a share's arguments strictly (`extra = forbid`) and an identity in the arguments would have broken their shares; a
+  provider's kernel-token gate reads the headers in the same place it reads `Authorization` and trusts them for the same reason:
+  only the kernel can mint the token the request carries.
+- **Reserved arguments are stripped** before the call: `scope_id` (already), `consumer`, `consumer_agent_id`, `as_agent`. A consumer
+  cannot name itself or an agent.
+- **A share's timeout is its own:** `shares[].timeout_seconds` (1–60, default 8; clamped) recorded by the installer in
+  `application_shares.timeout_seconds` (db/173); the kernel waits that long for the tool's answer (the handshake keeps 8 s). Knowledge's
+  `ask` and `search` run the engine and declare 60.
+- **Recorded:** `application.read` gains `consumer_agent_id` and `timeout_seconds`.
+- **Providers:** Spaces reads `X-OS-Consumer-Agent` into its share door (its `as_agent` argument is gone); Knowledge's three shares
+  gate on `X-OS-Consumer` (Phase 4); Reservations, txtSchedules, GL and Consultant Tracking ignore the headers and are unchanged.
+  Plugin 0.8.0 `sms-and-reads.md` says how a provider reads them.
 
 ## The first uses
 | Consumer | Provider | Tool | For |
@@ -85,7 +108,8 @@ Reservations' `covers_by_service` is added to its admin MCP with the kernel-toke
 
 ## Plugin
 `maludb-os-integration` 0.5.0: `sms-and-reads.md` (both services, the manifest keys `shares` and `reads`, the widened
-kernel-token rule); `registration.md` gains `shares`, `reads`.
+kernel-token rule); `registration.md` gains `shares`, `reads`. 0.8.0 (K26, 2026-10-06): the two headers a provider may read,
+`shares[].timeout_seconds`, the reserved arguments.
 
 ## Proof
 K6: a member with a verified phone and a grant → queued, then sent (or failed with Twilio's words) by the worker; no
@@ -93,3 +117,7 @@ grant → `not_held`; no verified phone → `no_verified_phone`; opted out → `
 `rate_limited`; no sender → 503; a revoked token → 401. K7: no connection → `no_connection`; a proposed one →
 `no_connection`; approved → the provider's answer; a location one side does not serve → `not_at_location`; a tool
 not shared → `not_shared`; revoked → `no_connection` again; the provider refusing a kernel token for any other tool.
+K26 (`bin/test_app_services.php`, the echo provider `bin/test_app_services_echo.php` on :8097): `timeout_seconds` recorded and clamped;
+the provider sees `X-OS-Consumer` and `X-OS-Consumer-Agent`; the consumer's own `consumer`, `consumer_agent_id`, `as_agent` and `scope_id`
+stripped; a consumer with no expert sends no agent header; a 2-second share that takes 4 s → 502 `provider_failed` inside 4 s; a 60-second
+share that takes 3 s answered; the log row carries the timeout and the agent.

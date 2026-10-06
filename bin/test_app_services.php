@@ -92,6 +92,50 @@ $ok($c === 403 && $e === 'no_connection', "revoked: {$c} {$e}");
 $logged = (int) $pdo->query("SELECT count(*) FROM activity_log WHERE action = 'application.read' AND entity_id = {$consumerId}")->fetchColumn();
 $ok($logged >= 8, "every read logged as application.read ({$logged}), the answer never");
 
+echo "K26 — the provider is told who is asking, and waits the share's own timeout (db/173)\n";
+// A SMOKE provider whose MCP server is bin/test_app_services_echo.php on :8097: it echoes the call's X-OS-* headers and arguments.
+$echoPort = 8097;
+$echo = proc_open(['php', '-S', '127.0.0.1:' . $echoPort, __DIR__ . '/test_app_services_echo.php'], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+usleep(600000);
+$pdo->prepare("INSERT INTO applications (name, app_key, category, description, is_self_hosted, url, criticality, status, scope_kind, sso_path, sme_agent_member_id, created_by)
+               VALUES (:n, :k, 'other', 'K26 proof provider', true, 'http://smoke-provider.invalid', 'low', 'active', 'none', '/sso', NULL, :b)")
+    ->execute(['n' => "SMOKE {$run} Provider", 'k' => 'smokep_' . str_replace('-', '_', $run), 'b' => $me]);
+$echoId = (int) $pdo->lastInsertId();
+$echoKey = 'smokep_' . str_replace('-', '_', $run);
+$pdo->prepare("INSERT INTO application_endpoints (application_id, name, kind, url, auth_kind, status) VALUES (:a, 'records', 'mcp', :u, 'none', 'active')")
+    ->execute(['a' => $echoId, 'u' => 'http://127.0.0.1:' . $echoPort . '/mcp']);
+$sync2 = application_services_sync($pdo, $echoId, [['tool' => 'echo', 'description' => 'echoes', 'timeout_seconds' => 2], ['tool' => 'slow', 'description' => 'echoes slowly', 'timeout_seconds' => 999]], []);
+$tos = $pdo->query("SELECT tool || '=' || timeout_seconds FROM application_shares WHERE application_id = {$echoId} ORDER BY tool")->fetchAll(PDO::FETCH_COLUMN);
+$ok($sync2['shares'] === 2 && $tos === ['echo=2', 'slow=60'], 'shares[].timeout_seconds is recorded, clamped to 60 (' . implode(', ', $tos) . ')');
+application_services_sync($pdo, $consumerId, [], [['app' => $echoKey, 'tool' => 'echo', 'why' => 'proof'], ['app' => $echoKey, 'tool' => 'slow', 'why' => 'proof']]);
+foreach ($pdo->query("SELECT id FROM application_connections WHERE consumer_id = {$consumerId} AND provider_id = {$echoId} AND revoked_at IS NULL")->fetchAll(PDO::FETCH_COLUMN) as $cid2) {
+    application_connection_decide($pdo, (int) $cid2, 'approve', $me);
+}
+$expertAgent = (int) $pdo->query("SELECT member_id FROM agent_profiles ORDER BY member_id LIMIT 1")->fetchColumn();
+$pdo->prepare('UPDATE applications SET sme_agent_member_id = :e WHERE id = :id')->execute(['e' => $expertAgent, 'id' => $consumerId]);
+$consumerKey = 'smoke_' . str_replace('-', '_', $run);
+[$c, $d, $e] = $call('POST', '/api/v1/apps/read.php', $token, ['provider' => $echoKey, 'tool' => 'echo', 'arguments' => ['q' => 'hello', 'consumer' => 'liar', 'consumer_agent_id' => 1, 'as_agent' => 1, 'scope_id' => 5]]);
+$seen = $d['result'] ?? [];
+$ok($c === 200 && ($seen['consumer'] ?? '') === $consumerKey, "the provider is told the consumer's key in X-OS-Consumer ({$c}: " . ($seen['consumer'] ?? '?') . ')');
+$ok((string) ($seen['consumer_agent'] ?? '') === (string) $expertAgent, "...and the consumer's expert agent in X-OS-Consumer-Agent (" . ($seen['consumer_agent'] ?? 'none') . ')');
+$ok(($seen['arguments'] ?? null) === ['q' => 'hello'], 'the consumer\'s own consumer, consumer_agent_id, as_agent and scope_id are stripped from the arguments: ' . json_encode($seen['arguments'] ?? null));
+$ok(($seen['bearer'] ?? '') === 'kernel', 'the call carries the kernel\'s token');
+$pdo->prepare('UPDATE applications SET sme_agent_member_id = NULL WHERE id = :id')->execute(['id' => $consumerId]);
+[$c, $d, $e] = $call('POST', '/api/v1/apps/read.php', $token, ['provider' => $echoKey, 'tool' => 'echo', 'arguments' => ['q' => 'again']]);
+$ok($c === 200 && ($d['result']['consumer'] ?? '') === $consumerKey && ($d['result']['consumer_agent'] ?? null) === null, 'a consumer with no expert: X-OS-Consumer alone, no agent header');
+$t0 = microtime(true);
+[$c, $d, $e] = $call('POST', '/api/v1/apps/read.php', $token, ['provider' => $echoKey, 'tool' => 'echo', 'arguments' => ['sleep' => 4]]);
+$dt = microtime(true) - $t0;
+$ok($c === 502 && $e === 'provider_failed' && $dt < 4, sprintf('a share with timeout_seconds 2 that takes 4 s: %d %s after %.1f s', $c, $e, $dt));
+$t0 = microtime(true);
+[$c, $d, $e] = $call('POST', '/api/v1/apps/read.php', $token, ['provider' => $echoKey, 'tool' => 'slow', 'arguments' => ['sleep' => 3]]);
+$dt = microtime(true) - $t0;
+$ok($c === 200 && $dt >= 3, sprintf('a share with timeout_seconds 60 that takes 3 s is answered (%d after %.1f s)', $c, $dt));
+$row = $pdo->query("SELECT after FROM activity_log WHERE action = 'application.read' AND entity_id = {$consumerId} AND after->>'outcome' = 'ok' ORDER BY id DESC LIMIT 1")->fetchColumn();
+$ok(is_string($row) && str_contains($row, '"timeout_seconds"') && str_contains($row, '"consumer_agent_id"'), 'application.read records the timeout and the consumer agent, never the answer');
+proc_terminate($echo);
+$pdo->prepare("UPDATE applications SET status = 'retired' WHERE id = :id")->execute(['id' => $echoId]);
+
 echo "K6 — application texts\n";
 $real = notify_endpoint($pdo);
 $dummySecret = null; $dummyEndpoint = null; $identity = null;

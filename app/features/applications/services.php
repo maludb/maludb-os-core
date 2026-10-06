@@ -165,11 +165,13 @@ function application_services_sync(PDO $pdo, int $appId, array $shares, array $r
             continue;
         }
         $keep[] = $tool;
-        $pdo->prepare('INSERT INTO application_shares (application_id, tool, description, scoped, people) VALUES (:a, :t, :d, :s, :p)
+        $timeout = (int) ($s['timeout_seconds'] ?? 8);                                      // K26 (db/173): 1–60, default 8
+        $pdo->prepare('INSERT INTO application_shares (application_id, tool, description, scoped, people, timeout_seconds) VALUES (:a, :t, :d, :s, :p, :o)
                        ON CONFLICT (application_id, tool) DO UPDATE SET description = EXCLUDED.description, scoped = EXCLUDED.scoped,
-                                                                       people = EXCLUDED.people, withdrawn_at = NULL, updated_at = now()')
+                                                                       people = EXCLUDED.people, timeout_seconds = EXCLUDED.timeout_seconds,
+                                                                       withdrawn_at = NULL, updated_at = now()')
             ->execute(['a' => $appId, 't' => $tool, 'd' => (string) ($s['description'] ?? ''), 's' => !empty($s['scoped']) ? 't' : 'f',
-                       'p' => !empty($s['people']) ? 't' : 'f']);
+                       'p' => !empty($s['people']) ? 't' : 'f', 'o' => max(1, min(60, $timeout > 0 ? $timeout : 8))]);
         $out['shares']++;
     }
     $w = $pdo->prepare('UPDATE application_shares SET withdrawn_at = now(), updated_at = now()
@@ -225,10 +227,16 @@ function application_connection_decide(PDO $pdo, int $connectionId, string $deci
     return $st->fetch();
 }
 
+/** K26: the arguments a consumer may not set — the kernel alone says who is asking (the headers), and `scope_id` is the kernel's. */
+const APP_READ_RESERVED_ARGUMENTS = ['scope_id', 'consumer', 'consumer_agent_id', 'as_agent'];
+
 /**
  * K7: the consumer asks for the provider's shared tool. Answers [HTTP status, payload]. The checks, in order: the
  * provider exists and shares the tool; an approved, unrevoked connection; for a scoped share, a location both serve
  * (the provider is handed its own scope id for it); then the call as the kernel, the answer passed back unchanged.
+ * K26 (2026-10-06): the call carries the consumer's identity in two headers — X-OS-Consumer (its app key) and
+ * X-OS-Consumer-Agent (its expert agent's member id, when it has one) — after removing any identity the consumer put in
+ * the arguments; it waits the share's own timeout_seconds (db/173) for the answer.
  */
 function application_read(PDO $pdo, array $consumer, string $providerKey, string $tool, array $arguments, ?int $locationId): array
 {
@@ -239,7 +247,7 @@ function application_read(PDO $pdo, array $consumer, string $providerKey, string
                         'ms' => (int) round((microtime(true) - $started) * 1000)]]);
         return [$status, ['code' => $code, 'message' => $message]];
     };
-    $st = $pdo->prepare("SELECT a.id, a.app_key, a.status, s.scoped, s.people, s.withdrawn_at
+    $st = $pdo->prepare("SELECT a.id, a.app_key, a.status, s.scoped, s.people, s.withdrawn_at, s.timeout_seconds
                            FROM applications a LEFT JOIN application_shares s ON s.application_id = a.id AND s.tool = :t
                           WHERE a.app_key = :k AND a.status <> 'retired'");
     $st->execute(['k' => $providerKey, 't' => $tool]);
@@ -257,7 +265,18 @@ function application_read(PDO $pdo, array $consumer, string $providerKey, string
     if ($c->fetchColumn() === false) {
         return $refuse(403, 'no_connection', 'No approved connection to that tool — a super-admin approves it in the operating system.');
     }
-    unset($arguments['scope_id']);
+    foreach (APP_READ_RESERVED_ARGUMENTS as $reserved) {
+        unset($arguments[$reserved]);
+    }
+    // K26: who is asking, from the consumer's own row — never from what it sent.
+    $who = $pdo->prepare('SELECT app_key, sme_agent_member_id FROM applications WHERE id = :id');
+    $who->execute(['id' => (int) $consumer['id']]);
+    $me = $who->fetch() ?: ['app_key' => (string) ($consumer['app_key'] ?? ''), 'sme_agent_member_id' => null];
+    $headers = ['X-OS-Consumer: ' . $me['app_key']];
+    if ($me['sme_agent_member_id'] !== null) {
+        $headers[] = 'X-OS-Consumer-Agent: ' . (int) $me['sme_agent_member_id'];
+    }
+    $timeout = (int) ($p['timeout_seconds'] ?? 8);
     if ($p['scoped']) {
         if ($locationId === null) {
             return $refuse(422, 'invalid', 'This tool is per site: name the location_id.');
@@ -279,12 +298,13 @@ function application_read(PDO $pdo, array $consumer, string $providerKey, string
     $why = [];
     foreach ($eps->fetchAll(PDO::FETCH_COLUMN) as $url) {
         try {
-            $result = mcp_call_tool_as_kernel((string) $url, (string) $p['app_key'], $tool, $arguments);
+            $result = mcp_call_tool_as_kernel((string) $url, (string) $p['app_key'], $tool, $arguments, $timeout, $headers);
             if (strlen((string) json_encode($result)) > APP_READ_MAX_BYTES) {
                 return $refuse(502, 'provider_failed', 'The answer is larger than 256 kB — ask for a shorter period.');
             }
             log_activity($pdo, 'application.read', 'application', (int) $consumer['id'], ['source' => 'application',
                 'after' => ['provider' => $providerKey, 'tool' => $tool, 'location_id' => $locationId, 'outcome' => 'ok',
+                            'consumer_agent_id' => $me['sme_agent_member_id'] === null ? null : (int) $me['sme_agent_member_id'], 'timeout_seconds' => $timeout,
                             'ms' => (int) round((microtime(true) - $started) * 1000)]]);
             return [200, ['result' => $result, 'provider' => $providerKey, 'tool' => $tool]];
         } catch (RuntimeException $e) {

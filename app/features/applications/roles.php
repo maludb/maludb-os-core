@@ -22,10 +22,10 @@ const MCP_PROTOCOL_VERSION = '2025-06-18';
  * One JSON-RPC message to a streamable-HTTP MCP server. Answers [decoded message or null, the
  * session id header, http status]. A server may answer plain JSON or a short event stream; both are read.
  */
-function mcp_http_post(string $url, string $token, array $message, ?string $session, int $timeout = 8): array
+function mcp_http_post(string $url, string $token, array $message, ?string $session, int $timeout = 8, array $extraHeaders = []): array
 {
-    $headers = ['Content-Type: application/json', 'Accept: application/json, text/event-stream',
-                'Authorization: Bearer ' . $token, 'MCP-Protocol-Version: ' . MCP_PROTOCOL_VERSION];
+    $headers = array_merge(['Content-Type: application/json', 'Accept: application/json, text/event-stream',
+                'Authorization: Bearer ' . $token, 'MCP-Protocol-Version: ' . MCP_PROTOCOL_VERSION], $extraHeaders);
     if ($session !== null) {
         $headers[] = 'Mcp-Session-Id: ' . $session;
     }
@@ -73,21 +73,25 @@ function mcp_http_post(string $url, string $token, array $message, ?string $sess
  * Call one tool on an MCP server as the kernel. Answers the tool's decoded JSON text, or throws
  * RuntimeException saying what went wrong in words a super-admin can act on.
  */
-function mcp_call_tool_as_kernel(string $url, string $appKey, string $tool, array $arguments = []): array
+/**
+ * $timeout: seconds to wait for the tool's answer (K26: a share's own, 1–60; the handshake keeps 8). $headers: extra HTTP headers on
+ * every message of the call — K26 sends the consumer's identity this way (X-OS-Consumer, X-OS-Consumer-Agent), never in the arguments.
+ */
+function mcp_call_tool_as_kernel(string $url, string $appKey, string $tool, array $arguments = [], int $timeout = 8, array $headers = []): array
 {
     $token = mint_kernel_token($appKey);
     [$init, $session, $status] = mcp_http_post($url, $token, ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize',
         'params' => ['protocolVersion' => MCP_PROTOCOL_VERSION, 'capabilities' => (object) [],
-                     'clientInfo' => ['name' => 'business-os-kernel', 'version' => '1']]], null);
+                     'clientInfo' => ['name' => 'business-os-kernel', 'version' => '1']]], null, 8, $headers);
     if ($status === 401 || $status === 403) {
         throw new RuntimeException('The application refused the kernel\'s token at ' . $url . ' — it does not accept kernel calls yet.');
     }
     if ($init === null || isset($init['error'])) {
         throw new RuntimeException('No MCP server answered at ' . $url . ' (HTTP ' . $status . ').');
     }
-    mcp_http_post($url, $token, ['jsonrpc' => '2.0', 'method' => 'notifications/initialized'], $session);
+    mcp_http_post($url, $token, ['jsonrpc' => '2.0', 'method' => 'notifications/initialized'], $session, 8, $headers);
     [$answer] = mcp_http_post($url, $token, ['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/call',
-        'params' => ['name' => $tool, 'arguments' => (object) $arguments]], $session);
+        'params' => ['name' => $tool, 'arguments' => (object) $arguments]], $session, max(1, min(60, $timeout)), $headers);
     if ($answer === null) {
         throw new RuntimeException('The MCP server at ' . $url . ' did not answer ' . $tool . '.');
     }
