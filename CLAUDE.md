@@ -374,6 +374,13 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
   config file's database connection and MaluDB schema become the kernel's `MALUDB_MEMORY_*`; the installer interviews the owner for
   the domain and reminds them of the DNS A records (bare, `app.`, `os.`, `hr.`, `helpdesk.`, `spaces.`, `projects.`); the rest is
   `install.md` §3–§13 by reference.
+- **Dockerized install: `github.com/maludb/maludb-os-docker`** (2026-10-07; local clone `~/maludb-os-docker`): `host-install.sh` runs this
+  runbook as one systemd container `bos` on a MaluDB hosting VM — the kernel at `/var/www` is in the IMAGE (`OS_CORE_REF`), PostgreSQL and the
+  MaluDB API stay on the host as `pg-host`, secrets/config/`/srv/apps` on volumes, Help Desk and Spaces applied by `bos-init` at every boot.
+  The same repository is the Claude Code plugin `maludb-os-docker` (skills `os-docker`, `os-docker-new-app`, `os-docker-change-app`,
+  `os-docker-kernel`; `bos-app.sh plan|apply|update|status|logs|list` wraps `app_install.php` with the container's fixes — `DB_HOST=pg-host`,
+  empty ports, a migration ledger). Known there: `bos-init` applies kernel migrations once only (an image upgrade needs the marker reset) and
+  its loopback `/etc/hosts` lines shadow `helpdesk.`/`spaces.` under `https`, so agents reach an application only through the owner's DNS/TLS.
 - Migrations: `sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/NNN_*.sql`
 - Service check: `systemctl status 'certstudy-*'`
 - MCP smoke test: mint token `php bin/mint_mcp_token.php --email ... --label ...`, then POST
