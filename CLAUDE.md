@@ -379,8 +379,9 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
   MaluDB API stay on the host as `pg-host`, secrets/config/`/srv/apps` on volumes, Help Desk and Spaces applied by `bos-init` at every boot.
   The same repository is the Claude Code plugin `maludb-os-docker` (skills `os-docker`, `os-docker-new-app`, `os-docker-change-app`,
   `os-docker-kernel`; `bos-app.sh plan|apply|update|status|logs|list` wraps `app_install.php` with the container's fixes — `DB_HOST=pg-host`,
-  empty ports, a migration ledger). Known there: `bos-init` applies kernel migrations once only (an image upgrade needs the marker reset) and
-  its loopback `/etc/hosts` lines shadow `helpdesk.`/`spaces.` under `https`, so agents reach an application only through the owner's DNS/TLS.
+  empty ports, a migration ledger). Fixed there the same day: `bos-init` applies the kernel's new migrations at every boot (it was once
+  only), and under `https` it writes no loopback `/etc/hosts` line for an application's name (the runner dials the registered
+  `https://<label>.<domain>/mcp/…`; a loopback line sent that to 127.0.0.1:443) — agents reach an application only through the owner's DNS/TLS.
 - Migrations: `sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/NNN_*.sql`
 - Service check: `systemctl status 'certstudy-*'`
 - MCP smoke test: mint token `php bin/mint_mcp_token.php --email ... --label ...`, then POST
