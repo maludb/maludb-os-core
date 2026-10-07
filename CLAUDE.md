@@ -368,6 +368,12 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
 - **Fresh install on a new Ubuntu 24.04 host: `docs/install.md`** (written and proven 2026-10-06: all 154 migrations apply clean on
   an empty database; `bin/bootstrap_organizer.php` now makes a SUPER-ADMIN — before that day it made a plain user, which locked a fresh
   install out of `os.`; `config/.env.example` documents every key; `mcp/registries/*.json` are install-specific and gitignored).
+- **On a MaluDB hosting VM: `docs/install-on-maludb-hosting.md`** (written 2026-10-07; the README's prompt "Use the installation
+  instructions in https://github.com/maludb/maludb-os-core.git to install the MaluDB Business OS Core" lands there): Ubuntu 24.04,
+  PostgreSQL 17 and MaluDB core are present; the existing application in `/var/www` is moved to `/var/www-previous-<date>` and its
+  config file's database connection and MaluDB schema become the kernel's `MALUDB_MEMORY_*`; the installer interviews the owner for
+  the domain and reminds them of the DNS A records (bare, `app.`, `os.`, `hr.`, `helpdesk.`, `spaces.`, `projects.`); the rest is
+  `install.md` §3–§13 by reference.
 - Migrations: `sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/NNN_*.sql`
 - Service check: `systemctl status 'certstudy-*'`
 - MCP smoke test: mint token `php bin/mint_mcp_token.php --email ... --label ...`, then POST

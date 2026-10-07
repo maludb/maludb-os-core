@@ -135,6 +135,44 @@ written so a person or a Claude Code session with `sudo` can execute it. In outl
 **Migrations are numbered and additive**: never edit an applied file, add the next number. Views keep
 `WITH (security_barrier = true)`, and new columns are appended last.
 
+### Installing on a MaluDB hosting virtual machine (with Claude Code)
+
+A VM from MaluDB hosting already has Ubuntu 24.04, PostgreSQL 17 and MaluDB core, and an application in
+`/var/www` whose configuration names the tenant's database connection and MaluDB memory schema. The kernel
+**replaces the contents of `/var/www`**: the existing application is moved to a dated sibling directory, never
+deleted, and its memory schema becomes the kernel's. Start a Claude Code session on the VM as the deploy user
+(normally `maludb`, with `sudo`) and give it this prompt:
+
+```
+Use the installation instructions in https://github.com/maludb/maludb-os-core.git to install the MaluDB Business OS Core.
+```
+
+**The instructions are [`docs/install-on-maludb-hosting.md`](docs/install-on-maludb-hosting.md)** — the hosting
+edition of the fresh-host runbook, which it calls section by section. The installer:
+
+1. **Asks for the domain name of the installation** and the first super-admin's email and name, and which keys
+   are available (Anthropic, OpenRouter, MaluMail, an embedder) — and reminds you that these names need **DNS A
+   records** pointing at the VM before anyone can reach them:
+
+   | Name | What answers there |
+   |---|---|
+   | `domain.com` (and `www.`) | the landing page |
+   | `app.domain.com` | sign-in and the launcher |
+   | `os.domain.com` | the operating system — super-admins and agents |
+   | `hr.domain.com`, `helpdesk.domain.com`, `spaces.domain.com`, `projects.domain.com` | the four default applications |
+
+   The install does not wait for DNS (the names resolve to loopback for its checks); the list is repeated at the end
+   with the current A record beside each name.
+2. **Surveys the host** (PostgreSQL 17, the `maludb_core` extension, the MaluDB API on :8000, Apache/PHP/Node) and
+   installs only what is missing — never MaluDB's own bootstrap.
+3. **Reads the existing application's configuration file** for the database host, port, name, user, password and
+   MaluDB schema, confirms them with you (never printing the password), and checks the schema is memory-enabled.
+4. **Moves `/var/www` to `/var/www-previous-<date>`** (and copies the Apache default site aside) after telling you,
+   clones the kernel there and follows `docs/install.md` §3–§13 with the tenant's memory database in place of the
+   runbook's `certstudy_memory`.
+5. **Installs the four default applications** and closes with the DNS table, where the previous application went,
+   the sign-in address, and what was left for you to set.
+
 ### Testing
 
 - `php bin/test_app_services.php` — application services (SMS, application reads).
@@ -241,7 +279,7 @@ installs to under `/srv/apps/`.
 | Kernel specs (sign-on, directory API, ledger, chat, scopes, roles, services) | `docs/build-specs/kernel-*.md` |
 | Agent runtime, evals, skills | `docs/build-specs/agent-*.md`, `eval-*.md`, `system-one-harness.md`, `skill-library.md` |
 | React migration record | `docs/react-migration-plan.md`, `docs/react-cutover-runbook.md` |
-| Fresh install runbook, deployment files | `docs/install.md`, `docs/deploy/` |
+| Fresh install runbook, the MaluDB-hosting edition, deployment files | `docs/install.md`, `docs/install-on-maludb-hosting.md`, `docs/deploy/` |
 | Action manifest and MCP tool surface | `docs/business-os-action-manifest.md`, `docs/business-os-mcp-tool-surface.md` |
 
 ## Security
