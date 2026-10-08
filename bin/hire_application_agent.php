@@ -11,11 +11,13 @@ declare(strict_types=1);
  * The contract says each entry is a proposal a super-admin confirms in one click; this script IS that click,
  * run by a super-admin (or by the provisioning script for the default applications, K4 — the owner's decision
  * of 2026-09-28 for Projects' Scrum Master, "hired on install"). Running it again reconciles the access grant
- * and the skills and changes nothing else.
+ * and the skills and changes nothing else — unless --reconcile-tools is given (2026-10-08, the cidery's equipment
+ * scheduling): then every tool the declaration names that the agent does not hold is granted too, each checked
+ * against what the server offers when the server is ours; nothing is revoked.
  *
  *   php bin/hire_application_agent.php --app <app_key> --agent <agent key>
  *                                      [--by <super-admin email>] [--model <model_key>] [--department <id>]
- *                                      [--app-dir </srv/apps/<app_key>>] [--budget <USD a month>]
+ *                                      [--app-dir </srv/apps/<app_key>>] [--budget <USD a month>] [--reconcile-tools]
  *
  * bin/hire_scrum_master.php is this script with --app projects --agent scrum_master.
  */
@@ -243,3 +245,31 @@ foreach ((array) ($agentDecl['skills'] ?? []) as $path) {
     $assigned++;
 }
 echo "Skills: " . count((array) ($agentDecl['skills'] ?? [])) . " declared, {$assigned} newly assigned.\n";
+
+// Its tools, on request: what the declaration names and the agent does not hold yet (an application that grew).
+if ($existing !== null && array_key_exists('reconcile-tools', $opts)) {      // a bare flag parses as ''
+    $st = $pdo->prepare('SELECT application_endpoint_id, tool_name FROM agent_tool_grants WHERE agent_member_id = :m AND revoked_at IS NULL');
+    $st->execute(['m' => $memberId]);
+    $held = [];
+    foreach ($st->fetchAll() as $g) { $held[(int) $g['application_endpoint_id'] . '/' . $g['tool_name']] = true; }
+    $offeredBy = [];
+    $granted = 0;
+    $skipped = [];
+    foreach ($tools as $t) {
+        $key = $t['application_endpoint_id'] . '/' . $t['tool_name'];
+        if (isset($held[$key])) { continue; }
+        if (!array_key_exists($t['application_endpoint_id'], $offeredBy)) {
+            $option = find_application_endpoint_option($pdo, (int) $t['application_endpoint_id']);
+            $offeredBy[$t['application_endpoint_id']] = $option !== null ? mcp_endpoint_tool_names($option, $byId) : null;
+        }
+        $offered = $offeredBy[$t['application_endpoint_id']];
+        if ($offered !== null && !in_array($t['tool_name'], $offered, true)) { $skipped[] = $t['tool_name']; continue; }
+        $grant = grant_agent_tool($pdo, $memberId, (int) $t['application_endpoint_id'], $t['tool_name'], [], $byId);
+        log_activity($pdo, 'agent_tool_grant.create', 'member', $memberId, ['source' => 'cron', 'after' => [
+            'application_endpoint_id' => (int) $t['application_endpoint_id'], 'endpoint_name' => $grant['endpoint_name'] ?? null,
+            'application_name' => $grant['application_name'] ?? null, 'tool_name' => $t['tool_name'], 'constraints' => [],
+            'by' => 'bin/hire_application_agent.php --reconcile-tools']]);
+        $granted++;
+    }
+    echo "Tools: " . count($tools) . " declared, {$granted} newly granted" . ($skipped !== [] ? '; not offered by the server, not granted: ' . implode(', ', $skipped) : '') . ".\n";
+}
