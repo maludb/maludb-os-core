@@ -169,7 +169,25 @@ foreach ((array) ($agentDecl['tool_grants'] ?? []) as $endpoint => $names) {
 }
 
 $tz = (string) ($pdo->query("SELECT timezone FROM business_settings WHERE id = 1")->fetchColumn() ?: 'UTC');
-$duties = array_map(static fn (array $d): array => $d + ['timezone' => $tz], $profile['duties']);
+// The duties the manifest declares for this agent (`duty` as one object, or `duties[]`; each name + schedule_cron, with
+// `instructions`, else a `runbook` path the instructions point the agent at) come after the kernel's own profile's
+// (2026-10-08: the Inventory Buyer's and GL Bookkeeper's morning duties and ProcessCore's Shift Planner declared
+// them this way, and the script hired them with none).
+$declaredDuties = [];
+foreach ([(array) ($agentDecl['duties'] ?? []), isset($agentDecl['duty']) && is_array($agentDecl['duty']) ? [$agentDecl['duty']] : []] as $list) {
+    foreach ($list as $d) {
+        if (!is_array($d) || trim((string) ($d['name'] ?? '')) === '' || trim((string) ($d['schedule_cron'] ?? '')) === '') { continue; }
+        $instructions = trim((string) ($d['instructions'] ?? ''));
+        if ($instructions === '') {
+            $runbook = trim((string) ($d['runbook'] ?? ''));
+            $instructions = $runbook !== ''
+                ? "Perform your duty \"{$d['name']}\" by following your runbook {$runbook} (shipped with {$appName} as a skill or job description)."
+                : "Perform your duty \"{$d['name']}\" as your job description describes it.";
+        }
+        $declaredDuties[] = ['name' => (string) $d['name'], 'instructions' => $instructions, 'schedule_cron' => (string) $d['schedule_cron'], 'timezone' => (string) ($d['timezone'] ?? $tz)];
+    }
+}
+$duties = array_merge(array_map(static fn (array $d): array => $d + ['timezone' => $tz], $profile['duties']), $declaredDuties);
 $budget = number_format((float) ($opts['budget'] ?? 20), 2, '.', '');
 
 $fields = [
