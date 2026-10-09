@@ -159,6 +159,7 @@ notification number (`bin/notify_endpoint_set.php`; none set → 503 `no_sender`
 Twilio key. `POST /api/v1/apps/read.php` — a consumer calls a provider's shared tool (`maludb-os.json` `shares[]` / `reads[]`, recorded by the
 installer) only over a connection a super-admin approved (`bin/app_connection.php`), per-site tools only at a site both serve (the provider
 gets its own `scope_id`). First share: Reservations' `covers_by_service`.
+**The application switcher (K31, 2026-10-09; spec `docs/build-specs/kernel-app-switcher.md`, proof `bin/test_app_switcher.php`):** `GET /api/v1/apps/mine.php` (application token + `X-Acting-Member`) answers the launcher's own rows for the acting person with `key`, `launch_path` and `current`, `os_url` for a super-admin — the feed behind the Helpdesk button and the applications dropdown in every application's header (both plugins 0.9.0; the application appends the path to its `OS_LAUNCHER_URL`).
 **Owed items (A7, 2026-09-22):** endpoints of an `ours` application attached with the run token; `html/api/v1/runs/facts.php`;
 `mcp/registries/<app_key>.json` → tools on the Actions MCP with `html/approvals/hook.php` in front; `application_catalog.kind = 'ours'`
 + `application_catalog_save`; the Claude harness carries skills inline and as `--plugin-dir`. db/139. Spec: `docs/build-specs/kernel-owed-items.md`.

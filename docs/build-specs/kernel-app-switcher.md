@@ -1,5 +1,7 @@
 # Moving between applications — the Help Desk button and the application switcher (K31, planned 2026-10-09)
 
+**Approved 2026-10-09 (D1–D10 as recommended). Kernel step 1 BUILT the same day:** `html/api/v1/apps/mine.php`, proven by `bin/test_app_switcher.php` (16 checks: the refusals, the super-admin's rows equal the launcher's, keys and launch paths, a scoped application's `?scope=`, the Help Desk with its icon, nothing logged). One change from the plan below: the kernel answers **`launch_path`** (`/launch/<id>`, `?scope=<id>`) and a best-effort `launcher_url`; the application appends the path to its own `OS_LAUNCHER_URL`, because the launcher's scheme is the installer's choice (`--scheme`), not the kernel's to guess.
+
 **For the owner's checkpoint.** A person who holds several applications moves between them today by going back to
 `app.<domain>` and choosing a card. The owner asked for two things in every application's header (`div.header-right`):
 a dedicated **Helpdesk** button, since the Help Desk is part of every installation, and beside it a **dropdown of every
