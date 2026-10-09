@@ -416,13 +416,18 @@ if ($mailable !== []) {
     }
 }
 $missing = array_values(array_diff($missing, $mailMissing));    // a required mail key is written by the mail step, not left empty
-// The two keys the kernel and the application SHARE — the hand-off and action tokens are signed with the kernel's ACTION_TOKEN_KEY,
-// the relay with ACTIONS_RELAY_KEY — must be the kernel's, not whatever a scratch install left in config/.env: a differing value
-// refused every sign-on as "expired" (ProcessCore, 2026-10-09). Rewritten when they differ, never shown.
-$sharedKeys = array_values(array_filter(['ACTION_TOKEN_KEY', 'ACTIONS_RELAY_KEY'],
-    static fn (string $k): bool => $values[$k] !== '' && isset($existingEnv[$k]) && $existingEnv[$k] !== '' && !hash_equals($values[$k], $existingEnv[$k])));
+// Keys whose value the INSTALLER decides are the installer's: a config/.env left by a scratch install (the developer's database,
+// a loopback APP_URL, a dev signing key) must not survive apply — ProcessCore's did on 2026-10-09: the application kept writing to
+// processcore_dev and refused every hand-off as expired because its ACTION_TOKEN_KEY was not the kernel's. Rewritten when they
+// differ, named in a todo line, values never shown. Secrets the installer generates ONCE (the roles' passwords, TOTP_KEY,
+// DUMMY_PASSWORD_HASH) and the ports stay as they are.
+$installerOwned = ['APP_ENV', 'APP_NAME', 'APP_URL', 'APP_KEY', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'MCP_RECORDS_DB_USER', 'MCP_ACTIVITY_DB_USER',
+    'ACTION_TOKEN_KEY', 'ACTIONS_RELAY_KEY', 'OS_INTERNAL_URL', 'OS_LAUNCHER_URL', 'MALUDB_API_URL'];
+if (!empty($m['identity']['enabled_env'])) { $installerOwned[] = (string) $m['identity']['enabled_env']; }
+$sharedKeys = array_values(array_filter($installerOwned,
+    static fn (string $k): bool => isset($values[$k]) && $values[$k] !== '' && isset($existingEnv[$k]) && $existingEnv[$k] !== '' && !hash_equals($values[$k], $existingEnv[$k])));
 if ($sharedKeys !== []) {
-    say('config', 'todo', implode(' and ', $sharedKeys) . ' differ' . (count($sharedKeys) === 1 ? 's' : '') . " from the kernel's — rewritten with the kernel's (the sign-on and action tokens are signed with them)");
+    say('config', 'todo', implode(', ', $sharedKeys) . ' in config/.env differ' . (count($sharedKeys) === 1 ? 's' : '') . " from this install's values (a scratch install's leftovers) — rewritten; the roles' passwords and the ports are kept");
 }
 $write = array_values(array_unique(array_merge($missing, $mailMissing, $sharedKeys)));
 if ($missing === []) {
