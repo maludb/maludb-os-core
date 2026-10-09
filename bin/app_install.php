@@ -416,7 +416,15 @@ if ($mailable !== []) {
     }
 }
 $missing = array_values(array_diff($missing, $mailMissing));    // a required mail key is written by the mail step, not left empty
-$write = array_values(array_unique(array_merge($missing, $mailMissing)));
+// The two keys the kernel and the application SHARE — the hand-off and action tokens are signed with the kernel's ACTION_TOKEN_KEY,
+// the relay with ACTIONS_RELAY_KEY — must be the kernel's, not whatever a scratch install left in config/.env: a differing value
+// refused every sign-on as "expired" (ProcessCore, 2026-10-09). Rewritten when they differ, never shown.
+$sharedKeys = array_values(array_filter(['ACTION_TOKEN_KEY', 'ACTIONS_RELAY_KEY'],
+    static fn (string $k): bool => $values[$k] !== '' && isset($existingEnv[$k]) && $existingEnv[$k] !== '' && !hash_equals($values[$k], $existingEnv[$k])));
+if ($sharedKeys !== []) {
+    say('config', 'todo', implode(' and ', $sharedKeys) . ' differ' . (count($sharedKeys) === 1 ? 's' : '') . " from the kernel's — rewritten with the kernel's (the sign-on and action tokens are signed with them)");
+}
+$write = array_values(array_unique(array_merge($missing, $mailMissing, $sharedKeys)));
 if ($missing === []) {
     say('config', 'done', array_intersect($mailMissing, $required) === [] ? 'config/.env carries every required key' : 'config/.env carries every required key but the mail keys, which the mail step writes');
 } else {
