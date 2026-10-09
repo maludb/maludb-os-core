@@ -45,7 +45,7 @@ for ($i = 3, $n = count($argvAll); $i < $n; $i++) {
 }
 if (!in_array($mode, ['plan', 'apply'], true) || $source === '') {
     fwrite(STDERR, "Usage: php bin/app_install.php plan|apply <repository dir or git URL> [--by <email>] [--domain <domain>] [--scheme http|https]\n"
-        . "       [--tenant <db prefix>] [--ref <tag>] [--hire-agents] [--grant-standing-departments] [--no-restart]\n");
+        . "       [--tenant <db prefix>] [--ref <tag>] [--hire-agents] [--grant-standing-departments] [--no-restart] [--rotate-db-passwords]\n");
     exit(1);
 }
 $APPLY = $mode === 'apply';
@@ -345,10 +345,13 @@ if ($dbExists) {
         if ($APPLY) { say('database', 'ok', count($migrations) . ' migrations applied'); }
     }
 }
-// Role passwords: set when the application has no .env yet (a fresh install, or a database made by hand) — never printed.
-$needPasswords = !isset($existingEnv['DB_PASSWORD']) || $existingEnv['DB_PASSWORD'] === '';
+// Role passwords: set when the application has no .env yet (a fresh install, or a database made by hand), or when asked with
+// --rotate-db-passwords (a scratch install's passwords, written down in its proof scripts, survived apply: ProcessCore,
+// 2026-10-09) — never printed; the services are restarted afterwards so they read the new ones.
+$rotate = !empty($opts['rotate-db-passwords']);
+$needPasswords = $rotate || !isset($existingEnv['DB_PASSWORD']) || $existingEnv['DB_PASSWORD'] === '';
 if ($needPasswords) {
-    say('db-roles', 'todo', 'set fresh passwords on ' . implode(', ', $roles) . ' (written to config/.env only)');
+    say('db-roles', 'todo', ($rotate ? 'rotate the passwords of ' : 'set fresh passwords on ') . implode(', ', $roles) . ' (written to config/.env only)');
     foreach ($roles as $which => $r) {
         $passwords[$which] = bin2hex(random_bytes(24));
         [$c, $o] = psql("ALTER ROLE {$r} WITH LOGIN PASSWORD '{$passwords[$which]}'");
@@ -429,7 +432,8 @@ $sharedKeys = array_values(array_filter($installerOwned,
 if ($sharedKeys !== []) {
     say('config', 'todo', implode(', ', $sharedKeys) . ' in config/.env differ' . (count($sharedKeys) === 1 ? 's' : '') . " from this install's values (a scratch install's leftovers) — rewritten; the roles' passwords and the ports are kept");
 }
-$write = array_values(array_unique(array_merge($missing, $mailMissing, $sharedKeys)));
+$passwordKeys = $passwords !== [] ? ['DB_PASSWORD', 'MCP_RECORDS_DB_PASSWORD', 'MCP_ACTIVITY_DB_PASSWORD'] : [];   // fresh or rotated: always written
+$write = array_values(array_unique(array_merge($missing, $mailMissing, $sharedKeys, $passwordKeys)));
 if ($missing === []) {
     say('config', 'done', array_intersect($mailMissing, $required) === [] ? 'config/.env carries every required key' : 'config/.env carries every required key but the mail keys, which the mail step writes');
 } else {
