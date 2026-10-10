@@ -7,7 +7,8 @@ declare(strict_types=1);
  * what only the kernel knows: is this an agent, which run, is the run an evaluation, and which
  * tools that agent holds on THIS application's endpoints — so the application fails closed on a
  * run token without a copy of the kernel's grants. A person's token answers is_agent=false: a
- * person is never filtered. An invalid token answers valid=false (200): the application refuses.
+ * person is never filtered. An invalid token answers valid=false (200): the application refuses. K38 (2026-10-10): an agent's run
+ * also answers who it acts for (requested_by_member_id, requested_by_kind, requested_by_holds — run_facts_requester()).
  */
 require_once dirname(__DIR__, 4) . '/app/api/bootstrap.php';
 require_once dirname(__DIR__, 4) . '/app/api/directory.php';
@@ -74,4 +75,10 @@ $out['role'] = $holding['role'];
 $out['roles'] = $holding['roles'];     // db/145, additive
 $out['rights'] = $holding['rights'];
 $out['scopes'] = $holding['scopes'];
+// K38 (2026-10-10): who the run acts for — a chat, manual or delegated run's requester and whether they hold this application; null
+// otherwise. An application intersects the agent's access with that person's (the person never sees less than the agent would let them,
+// the agent never reads more than the person may). Additive: an older application ignores the three keys.
+$out += $out['is_agent'] && $runId !== null
+    ? run_facts_requester($pdo, (int) $app['id'], (int) $runId, $memberId)
+    : ['requested_by_member_id' => null, 'requested_by_kind' => null, 'requested_by_holds' => false];
 api_json($out);

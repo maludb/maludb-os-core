@@ -82,6 +82,33 @@ function sso_member_holding(PDO $pdo, int $applicationId, int $memberId): array
             'capability' => $best, 'scopes' => $scopes];
 }
 
+/**
+ * K38 (2026-10-10; docs/build-specs/kernel-run-facts-requester.md): WHO AN AGENT'S RUN ACTS FOR. For a run a person (or an orchestrator acting
+ * for one) started — trigger chat, manual or delegation — the member recorded in agent_runs.requested_by, and whether that member holds THIS
+ * application; null for a duty, an evaluation or a message (they act as the agent alone) and when the requester is the agent itself. The
+ * application intersects the agent's access with the requester's (the Data Lake's rule 8), so a chat turn never reads more than the person may.
+ *
+ * @return array{requested_by_member_id: ?int, requested_by_kind: ?string, requested_by_holds: bool}
+ */
+function run_facts_requester(PDO $pdo, int $applicationId, int $runId, int $agentMemberId): array
+{
+    $none = ['requested_by_member_id' => null, 'requested_by_kind' => null, 'requested_by_holds' => false];
+    $st = $pdo->prepare("SELECT r.requested_by, r.trigger, m.member_kind, m.status FROM agent_runs r JOIN members m ON m.id = r.requested_by
+                          WHERE r.id = :r AND r.agent_member_id = :a");
+    $st->execute(['r' => $runId, 'a' => $agentMemberId]);
+    $row = $st->fetch() ?: null;
+    if ($row === null || !in_array((string) $row['trigger'], ['chat', 'manual', 'delegation'], true)
+        || (int) $row['requested_by'] === $agentMemberId) {
+        return $none;
+    }
+    $holding = sso_member_holding($pdo, $applicationId, (int) $row['requested_by']);
+    return [
+        'requested_by_member_id' => (int) $row['requested_by'],
+        'requested_by_kind' => (string) $row['member_kind'],
+        'requested_by_holds' => $row['status'] === 'active' && $holding['capability'] !== null,
+    ];
+}
+
 function app_capability_rank_php(string $capability): int
 {
     return ['read' => 1, 'write' => 2, 'admin' => 3][$capability] ?? 0;
