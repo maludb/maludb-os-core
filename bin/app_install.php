@@ -700,8 +700,22 @@ if (!is_file($registrySrc)) {
     $file = ['schema' => 'maludb-os.registry/1', 'app_key' => $key, 'name' => $name,
         'base_url' => 'http://127.0.0.1:' . (int) ($env['APP_INTERNAL_PORT'] ?? 0), 'records_url' => $appUrl . $recordsPath,
         'resolve' => (array) ($wrapper['resolve'] ?? []), 'registry' => $registry];
-    $json = json_encode($file, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
     $target = $KERNEL . '/mcp/registries/' . $key . '.json';
+    // K55 (2026-10-11): every action gets the name it is served under on the kernel's ONE Actions MCP — its own name when no other
+    // application and no kernel action uses it, else "<app_key>_<action>"; a name this application already had is kept, and no
+    // other application's tool is ever renamed (app/features/applications/action_tool_names.php).
+    require_once $KERNEL . '/app/features/applications/action_tool_names.php';
+    $others = load_action_registries($KERNEL . '/mcp/registries');
+    unset($others[$key]);
+    $previousFile = is_file($target) ? (json_decode((string) file_get_contents($target), true) ?: null) : null;
+    [$file, $toolClashes] = assign_registry_tool_names($key, $file, $previousFile, $others, kernel_action_names($KERNEL));
+    $prefixed = array_filter(registry_built_actions($file), static fn (array $a): bool => isset($a['tool_name']) && $a['tool_name'] !== $a['action']);
+    if ($prefixed !== []) {
+        say('registry', 'note', count($prefixed) . " action(s) served as {$key}_<action> — another application or the kernel uses the name: "
+            . implode(', ', array_map(static fn (array $a): string => (string) $a['action'], array_slice($prefixed, 0, 8))) . (count($prefixed) > 8 ? ', …' : ''));
+    }
+    foreach ($toolClashes as $act => $why) { say('registry', 'note', "action {$act}: {$why} — it will not be served (K55)"); }
+    $json = json_encode($file, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
     $built = is_array($registry['actions'] ?? null) ? count(array_filter($registry['actions'], static fn (array $a): bool => !empty($a['built']))) : 0;
     if (is_file($target) && file_get_contents($target) === $json) {
         say('registry', 'done', basename($target) . " is current ({$built} built actions" . ($file['resolve'] === [] ? ', no resolve block' : '') . ')');

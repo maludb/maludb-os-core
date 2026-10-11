@@ -20,6 +20,12 @@ a name in a param becomes an id by calling the application's find_* tool with th
                               "label_field": "title", "params": ["booking", "booking_id"]}},
       "registry": { ...the application's mcp/action_registry.json... }
     }
+
+Tool names (K55, 2026-10-11; docs/build-specs/kernel-action-tool-names.md): every application's actions share this one server's
+list of names. Each built action carries a `tool_name` the installer gives it (app/features/applications/action_tool_names.php):
+its own action name when no other application and no kernel action uses it, else "<app_key>_<action>". The tool is served under
+that name; the action's own name stays what the application, the approval hook and the log know it by. A registry written before
+K55 has no tool names — bin/actions_tool_names.php gives them and moves the agents' grants.
 """
 from __future__ import annotations
 
@@ -103,6 +109,11 @@ def describe(action: dict, app_name: str) -> str:
     return "\n".join(lines)
 
 
+def tool_name(action: dict) -> str:
+    """The name a built action is served under: its registry's tool_name (K55), else the action's own name."""
+    return str(action.get("tool_name") or action["action"])
+
+
 def register(mcp, app_post, action_token, taken: set[str]) -> int:
     """Attach one tool per built action of every registry in mcp/registries/. `app_post(path,
     fields, base=)` posts as the caller; `action_token()` is the caller's token for resolution."""
@@ -117,9 +128,12 @@ def register(mcp, app_post, action_token, taken: set[str]) -> int:
         for action in reg["registry"]["actions"].values():
             if not action.get("built"):
                 continue
-            name = action["action"]
+            name = tool_name(action)
             if name in taken:
-                log.warning("%s: action '%s' collides with a tool already registered — skipped", reg["_file"], name)
+                # Never quietly: an agent granted this name would be handed another application's tool (K55). The registry
+                # predates tool names, or was written by hand — `php bin/actions_tool_names.php plan` says what to change.
+                log.error("%s: action '%s' would be served as '%s', which is already another tool's name — NOT registered; "
+                          "run php bin/actions_tool_names.php plan", reg["_file"], action["action"], name)
                 continue
             taken.add(name)
             _make_tool(mcp, app_post, action_token, action, base, app_key, app_name, param_entity, resolve_map, records_url)
@@ -218,8 +232,8 @@ def _make_tool(mcp, app_post, action_token, action: dict, base: str, app_key: st
         result["application"] = app_key
         return json.dumps(result)
 
-    run.__name__ = action["action"]
+    run.__name__ = tool_name(action)
     run.__annotations__ = {"params": model, "return": str}
-    mcp.add_tool(run, name=action["action"], description=describe(action, app_name),
+    mcp.add_tool(run, name=tool_name(action), description=describe(action, app_name),
                  annotations={"title": f"{app_name}: {action['action'].replace('_', ' ')}", "readOnlyHint": False,
                               "destructiveHint": bool(action.get("confirm"))})

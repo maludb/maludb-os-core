@@ -164,9 +164,16 @@ foreach ($st->fetchAll() as $e) { $endpoints[$e['name']] = (int) $e['id']; }
 $actions = $pdo->query("SELECT e.id FROM application_endpoints e JOIN applications a ON a.id = e.application_id WHERE a.name = 'Business OS' AND e.kind = 'mcp' AND e.name = 'Actions MCP'")->fetchColumn();
 if ($actions !== false) { $endpoints['Actions MCP'] = (int) $actions; }
 $tools = [];
+// K55 (2026-10-11): on the kernel's Actions MCP an action is served under its registry's tool name — "<app_key>_<action>" when
+// another application or the kernel uses the name — so a declared action is granted under the name this application's is served as.
+require_once dirname(__DIR__) . '/app/features/applications/action_tool_names.php';
+$actionTools = application_action_tool_map(dirname(__DIR__), $appKey);
 foreach ((array) ($agentDecl['tool_grants'] ?? []) as $endpoint => $names) {
     if (!isset($endpoints[$endpoint])) { fwrite(STDERR, "note: no '{$endpoint}' endpoint for the tools it declares — not granted.\n"); continue; }
-    foreach ((array) $names as $name) { $tools[] = ['application_endpoint_id' => $endpoints[$endpoint], 'tool_name' => (string) $name, 'constraints' => []]; }
+    foreach ((array) $names as $name) {
+        $tool = $endpoint === 'Actions MCP' ? ($actionTools[(string) $name] ?? (string) $name) : (string) $name;
+        $tools[] = ['application_endpoint_id' => $endpoints[$endpoint], 'tool_name' => $tool, 'constraints' => []];
+    }
 }
 
 $tz = (string) ($pdo->query("SELECT timezone FROM business_settings WHERE id = 1")->fetchColumn() ?: 'UTC');
