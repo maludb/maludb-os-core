@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Hire one of the agents an application from us declares in its maludb-os.json `agents[]` — the plugin's
  * contract (registration.md): a `user`-role agent in the department that owns the application, its
- * job_description as its prompt, an application_access grant at its access_capability, one tool grant per
+ * job_description as its prompt, an application_access grant at its access_capability as its declared `roles`, one tool grant per
  * tool it names (read tools on the application's own MCP endpoints, action tools on the kernel's Actions
  * MCP) and its shipped skills assigned at agent scope; the first entry (`expert`) becomes the application's
  * subject matter expert (`applications.sme_agent_member_id`) when it has none.
@@ -11,7 +11,8 @@ declare(strict_types=1);
  * The contract says each entry is a proposal a super-admin confirms in one click; this script IS that click,
  * run by a super-admin (or by the provisioning script for the default applications, K4 — the owner's decision
  * of 2026-09-28 for Projects' Scrum Master, "hired on install"). Running it again reconciles the access grant
- * and the skills and changes nothing else — unless --reconcile-tools is given (2026-10-08, the cidery's equipment
+ * (a grant giving no role takes the declared roles once the application publishes them; one giving a role is left
+ * alone) and the skills and changes nothing else — unless --reconcile-tools is given (2026-10-08, the cidery's equipment
  * scheduling): then every tool the declaration names that the agent does not hold is granted too, each checked
  * against what the server offers when the server is ours; nothing is revoked.
  *
@@ -213,30 +214,72 @@ if ($existing !== null) {
     echo "Hired: {$profile['name']} (member {$memberId}) in {$dept['name']} on {$model['display_name']}, " . count($tools) . ' tools, ' . count($duties) . " duties.\n";
 }
 
-// Its access to the application, at the declared capability (the contract's application_access grant): the role
-// whose capability that is — an application's `member` role for write, `viewer` for read, when it has them.
+// Its access to the application, at the declared capability (the contract's application_access grant), as the
+// roles the declaration names (`agents[].roles`, those the application publishes — 2026-10-11: the Inventory Buyer
+// declared `buyer` and was hired as Sales), else the role whose capability that is — an application's `member` role
+// for write, `viewer` for read, when it has them.
 $capability = in_array($agentDecl['access_capability'] ?? 'write', ['read', 'write', 'admin'], true) ? $agentDecl['access_capability'] : 'write';
-$st = $pdo->prepare('SELECT id FROM application_access WHERE application_id = :a AND member_id = :m AND revoked_at IS NULL');
+$st = $pdo->prepare('SELECT role_key, is_admin FROM application_roles WHERE application_id = :a AND withdrawn_at IS NULL ORDER BY sort_order');
+$st->execute(['a' => (int) $app['id']]);
+$roles = $st->fetchAll();
+$declaredRoles = array_values(array_unique(array_filter(array_map('strval', (array) ($agentDecl['roles'] ?? [])), static fn (string $r): bool => $r !== '')));
+$declaredLive = array_values(array_intersect($declaredRoles, array_column($roles, 'role_key')));
+$declaredMissing = array_values(array_diff($declaredRoles, $declaredLive));
+$st = $pdo->prepare('SELECT id FROM application_access WHERE application_id = :a AND member_id = :m AND revoked_at IS NULL ORDER BY id');
 $st->execute(['a' => (int) $app['id'], 'm' => $memberId]);
-if ($st->fetchColumn() === false) {
-    $st = $pdo->prepare('SELECT role_key, is_admin FROM application_roles WHERE application_id = :a AND withdrawn_at IS NULL ORDER BY sort_order');
-    $st->execute(['a' => (int) $app['id']]);
-    $roles = $st->fetchAll();
-    $wanted = $capability === 'read' ? ['viewer', 'reader', 'read'] : ($capability === 'admin' ? [] : ['member', 'user', 'write']);
-    $roleKey = null;
-    foreach ($roles as $r) {
-        if ($capability === 'admin' ? (bool) $r['is_admin'] : in_array($r['role_key'], $wanted, true)) { $roleKey = $r['role_key']; break; }
+$grantIds = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
+if ($grantIds === []) {
+    $roleKeys = $declaredLive;
+    if ($roleKeys === []) {
+        $wanted = $capability === 'read' ? ['viewer', 'reader', 'read'] : ($capability === 'admin' ? [] : ['member', 'user', 'write']);
+        $roleKey = null;
+        foreach ($roles as $r) {
+            if ($capability === 'admin' ? (bool) $r['is_admin'] : in_array($r['role_key'], $wanted, true)) { $roleKey = $r['role_key']; break; }
+        }
+        if ($roleKey === null && $roles !== [] && $capability !== 'admin') {
+            $roleKey = $roles[$capability === 'read' ? 0 : min(1, count($roles) - 1)]['role_key'];   // the lowest, or the next one up
+        }
+        $roleKeys = $roleKey !== null ? [$roleKey] : [];
     }
-    if ($roleKey === null && $roles !== [] && $capability !== 'admin') {
-        $roleKey = $roles[$capability === 'read' ? 0 : min(1, count($roles) - 1)]['role_key'];   // the lowest, or the next one up
-    }
-    $grant = grant_application_access($pdo, (int) $app['id'], ['member_id' => $memberId, 'capability' => $capability, 'roles' => $roleKey !== null ? [$roleKey] : [],
+    $grant = grant_application_access($pdo, (int) $app['id'], ['member_id' => $memberId, 'capability' => $capability, 'roles' => $roleKeys,
         'note' => 'Shipped with ' . $appName . ' (' . $agentKey . ')'], $byId);
     log_activity($pdo, 'application_access.grant', 'application', (int) $app['id'], ['source' => 'cron',
-        'after' => ['member_id' => $memberId, 'capability' => $capability, 'role_key' => $roleKey, 'grant_id' => (int) ($grant['application_access_id'] ?? 0)]]);
-    echo "Access: {$capability}" . ($roleKey !== null ? " as {$roleKey}" : '') . ".\n";
+        'after' => ['member_id' => $memberId, 'capability' => $capability, 'role_key' => $grant['role_key'] ?? null, 'roles' => $roleKeys,
+                    'grant_id' => (int) ($grant['application_access_id'] ?? 0)]]);
+    echo "Access: {$capability}" . ($roleKeys !== [] ? ' as ' . implode(', ', $roleKeys) : '') . ".\n";
 } else {
-    echo "Access: already granted.\n";
+    // A grant made before the application published its roles gives none; it takes the declared roles now (each of
+    // an agent's grants — one per scope on a scoped application). A grant that gives any role is a super-admin's to
+    // change and is left alone.
+    $grantRoles = application_grant_roles($pdo, (int) $app['id']);
+    $said = [];
+    foreach ($grantIds as $grantId) {
+        $held = array_column($grantRoles[$grantId] ?? [], 'role_key');
+        if ($held !== [] || $declaredLive === []) {
+            $said[] = 'already granted' . ($held !== [] ? ' as ' . implode(', ', $held) : '');
+            continue;
+        }
+        $pdo->beginTransaction();
+        $changed = change_application_access($pdo, (int) $app['id'], $grantId, null, $capability, $byId, $declaredLive);
+        if ($changed === []) {
+            $pdo->rollBack();
+            $said[] = "grant {$grantId} could not be given its declared roles";
+            continue;
+        }
+        log_activity($pdo, 'application_access.change', 'application', (int) $app['id'], ['source' => 'cron',
+            'before' => ['application_access_id' => $grantId, 'member_id' => $memberId, 'scope_id' => $changed[0]['scope_id'] ?? null,
+                         'capability' => $changed[0]['capability'] ?? null, 'roles' => []],
+            'after' => ['application_access_id' => (int) $changed[1]['application_access_id'], 'member_id' => $memberId, 'scope_id' => $changed[1]['scope_id'] ?? null,
+                        'capability' => $changed[1]['capability'] ?? null, 'roles' => $declaredLive, 'by' => 'bin/hire_application_agent.php']]);
+        $pdo->commit();
+        $said[] = 'already granted with no role — now ' . implode(', ', $declaredLive) . ', as declared';
+    }
+    echo 'Access: ' . implode('; ', array_unique($said)) . ".\n";
+}
+if ($declaredMissing !== []) {
+    echo 'Roles: ' . implode(', ', $declaredMissing) . ($roles === []
+        ? " declared — the application has published no roles yet; hire again once its roles are read (application_roles_refresh).\n"
+        : " declared but not published by the application — not granted.\n");
 }
 
 // The first declared agent is the application's expert, when it has none.
