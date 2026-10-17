@@ -5,7 +5,7 @@ application beside the kernel: `<app_key>.json`. The actions server (`mcp/action
 `mcp/application_actions.py`) loads every file here at start and puts each built action of the
 application on the kernel's ONE Actions MCP — tool grants enforced here, an evaluation's write
 recorded and never sent, the relay key never handed out, and the approval hook asked before an
-action with an approval category is posted. Restart `certstudy-actions-mcp` after adding one.
+action with an approval category is posted. Restart `maludb-os-actions-mcp` after adding one.
 
 ```json
 {

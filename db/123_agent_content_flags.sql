@@ -12,7 +12,7 @@
 -- judge the hit without copying the record.
 --
 -- Additive. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/123_agent_content_flags.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/123_agent_content_flags.sql
 
 BEGIN;
 

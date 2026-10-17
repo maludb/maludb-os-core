@@ -4,7 +4,7 @@
 
 > Source of truth: the migrations `db/030_*.sql` through `db/071_*.sql`.
 > Derived from: `docs/business-os-questions.md` (287 questions). Next: the MCP tool surface (1.5) and the action manifest (1.6). All three get approved together at M1.
-> **Not installed** on `certstudy`. It was applied and tested on a throwaway copy (`certstudy_schema_test`) only.
+> **Not installed** on `maludb_os`. It was applied and tested on a throwaway copy (`maludb_os_schema_test`) only.
 
 ## Summary
 
@@ -153,9 +153,9 @@ The request context is unchanged: the app and the MCP servers set `app.member_id
 | Content & social (SM1–SM13) | `channels`, `campaigns`, `content_items`, `content_variants` (calendar, publish result), `content_metrics`, attribution columns on organizations, contacts and deals; SM11 cost from expenses + time + `agent_runs`; SM12 from activity |
 | Tenant & audit (X1–X8) | `activity_log` (history, actor, source, agent run), `backup_runs`, `restore_rehearsals`, `data_exports`, `mcp_access_tokens` |
 
-## Verification (on `certstudy_schema_test`)
+## Verification (on `maludb_os_schema_test`)
 
-- **Migrations:** all 33 apply in order with `ON_ERROR_STOP` on a fresh clone of `certstudy` (re-verified 2026-09-17 after the back-office modules). The seed file re-runs cleanly, and the views file re-applies cleanly.
+- **Migrations:** all 33 apply in order with `ON_ERROR_STOP` on a fresh clone of `maludb_os` (re-verified 2026-09-17 after the back-office modules). The seed file re-runs cleanly, and the views file re-applies cleanly.
 - **Coverage checks:** every table has RLS, the read roles hold no base-table grants, and every `updated_at` table has its trigger. Foreign keys used in lookups or cascading deletes have indexes; unindexed ones are audit columns only (`created_by` and similar).
 - **Secrets:** the records MCP role is denied `tenant_secrets` and base tables such as `invoices`. The cert-study `mcp_exams` view still answers.
 - **Role fixture (re-run 2026-09-17 on the three-role model),** queried as the records MCP role. Departments Sales and Ops, one organization and one invoice in each plus one with no department:
@@ -191,7 +191,7 @@ The request context is unchanged: the app and the MCP servers set `app.member_id
 
 ## Open points for this review
 
-1. **Install timing:** install the schema on `certstudy` right after M1 approval, or wait until the shell conversion starts? Recommendation: at approval, since everything is additive and the cert-study modules were verified untouched.
+1. **Install timing:** install the schema on `maludb_os` right after M1 approval, or wait until the shell conversion starts? Recommendation: at approval, since everything is additive and the cert-study modules were verified untouched.
 2. **Department default:** records with no department are visible to all staff holding the module. The stricter alternative is owner-only until a department is set. Recommendation: keep the open default for a small business.
 3. **Estate depth:** the tree is building → office → desk, two levels plus desks. Racks, sites or regions would need a third. Recommendation: keep two levels; `parent_location_id` already allows deeper nesting if a tenant needs it, without a schema change.
 4. **Physical assets:** vehicles, rooms and equipment stay in `bookable_resources` (scheduling), not in the estate tree, because they are booked rather than run on. Applications and locations are infrastructure; resources are capacity. Recommendation: keep them apart, and revisit if a tenant wants one "properties" view over both.

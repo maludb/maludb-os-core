@@ -39,11 +39,11 @@ button on the application's Overview, beside the application token, is owed (Rea
 
 ## Going live
 
-The migration is applied. The running runner holds the old proxy code: **`sudo systemctl restart certstudy-agent-runner` (the
+The migration is applied. The running runner holds the old proxy code: **`sudo systemctl restart maludb-os-agent-runner` (the
 owner's) is what makes the credential work.** No agent run is affected by the change (the chat path is unchanged; the whole unit
 suite, 41 tests, passes).
 
-## Proven (scratch database `certstudy_k24_scratch`, a login role holding only app_runner's privileges, a fake provider)
+## Proven (scratch database `maludb_os_k24_scratch`, a login role holding only app_runner's privileges, a fake provider)
 
 No key and an unknown key refused (401) · the model list is the allowed models · an embedding, a chat by provider id and a chat
 by registry key forwarded, the upstream seeing the provider's model id and never the credential · a model outside the allowlist

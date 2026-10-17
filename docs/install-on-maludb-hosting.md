@@ -144,7 +144,7 @@ sudo -u postgres psql -d "$MEM_DB" -Atc "select count(*) from information_schema
 ```
 
 A `0` on the last line means the schema was never enabled for memory; that is **§2.2**'s two calls, run against
-the tenant's database and schema instead of `certstudy_memory`/`certstudy_mem`:
+the tenant's database and schema instead of `maludb_os_memory`/`maludb_os_mem`:
 
 ```bash
 sudo -u postgres psql -d "$MEM_DB" -Atc "SELECT count(*) FROM maludb_core.enable_memory_schema('$MEM_SCHEMA')"   # ~190 objects
@@ -171,7 +171,7 @@ sudo install -d -o "$USER" -g "$USER" -m 755 /var/www
 ```
 
 Tell the owner the path. If the previous application had a systemd unit, a cron line or a database of its own,
-leave them; this install creates nothing with the same names (the kernel's are `certstudy-*`), and removing the
+leave them; this install creates nothing with the same names (the kernel's are `maludb-os-*`), and removing the
 old ones is the owner's decision later.
 
 Apache stays stopped until §6 installs the kernel's site.
@@ -180,7 +180,7 @@ Apache stays stopped until §6 installs the kernel's site.
 
 ## 5. The kernel's code, database and configuration (§3, §4, §5)
 
-Run **§3** (clone, Composer, `storage/`, `config/.env`), **§4** (the `certstudy` database, all `db/*.sql` in
+Run **§3** (clone, Composer, `storage/`, `config/.env`), **§4** (the `maludb_os` database, all `db/*.sql` in
 order as `postgres`, passwords for the four roles, the checks) and **§5** (the keys, the two env files) exactly as
 written, with these substitutions:
 
@@ -196,12 +196,12 @@ written, with these substitutions:
   ```
 
 - **In `config/.env`** (**§5**) set `MALUDB_MEMORY_DB=$MEM_DB`, `MALUDB_MEMORY_USER=$MEM_USER`,
-  `MALUDB_MEMORY_PASSWORD=<~/.mem.pw>` in place of the `certstudy_memory`/`certstudy_mem` defaults, and
+  `MALUDB_MEMORY_PASSWORD=<~/.mem.pw>` in place of the `maludb_os_memory`/`maludb_os_mem` defaults, and
   `MALUDB_API_TOKEN` from `~/.maludb.token`. `bin/app_install.php` mints each application's memory token with
   these three, so they must be the tenant's real login. Everything else in §5 is as written: `OS_HOST=os.$DOMAIN`,
   `APP_HOST=app.$DOMAIN`, `SESSION_COOKIE_DOMAIN=.$DOMAIN`, `APP_URL=https://app.$DOMAIN`, `APP_ENV=prod`, the
   seven generated keys and their pairings, the MaluMail key and sender if given.
-- The kernel's records database stays **`certstudy`** with its four roles; the tenant's database is not touched
+- The kernel's records database stays **`maludb_os`** with its four roles; the tenant's database is not touched
   by the migrations. `db/000`'s `NOTICE: maludb extension not available` is expected here too (it looks for an
   extension named `maludb`, not `maludb_core`).
 
@@ -243,7 +243,7 @@ resolve yet.
 ```bash
 cd /var/www && php bin/app_install.php plan https://github.com/maludb/maludb-os-hr.git --by "$ADMIN_EMAIL" --domain "$DOMAIN"
 sudo bin/install_default_applications.sh --by "$ADMIN_EMAIL" --domain "$DOMAIN" --scheme https
-sudo -u postgres psql -d certstudy -Atc "select app_key||' '||status from applications where app_key is not null order by id"   # hr, projects, helpdesk, spaces
+sudo -u postgres psql -d maludb_os -Atc "select app_key||' '||status from applications where app_key is not null order by id"   # hr, projects, helpdesk, spaces
 ```
 
 ---
@@ -265,7 +265,7 @@ Close with a report the owner can act on, in this order:
 3. The super-admin's sign-in address (`https://app.$DOMAIN`) and that the password was shown once in **§10.1**.
 4. What was left unset from the interview (keys, MaluMail, the embedder) and the command that sets each.
 5. What stays the owner's — **§14** of `install.md`: DNS and TLS, provider keys and budgets, backups of
-   `certstudy`, the tenant's memory database and every application database.
+   `maludb_os`, the tenant's memory database and every application database.
 
 ---
 
@@ -277,10 +277,10 @@ Close with a report the owner can act on, in this order:
 | §1.1 MaluDB core and PostgreSQL 17 | **Skip.** Present; hosting owns them. Verified by §2 here. |
 | §1.2 Apache, PHP, Composer, Node | Run only for what §2's survey finds missing |
 | §2.1 the MaluDB API | Run only if nothing answers on :8000 |
-| §2.2 `certstudy_memory` / `certstudy_mem` | **Replaced**: the tenant's database and memory schema from the existing application's configuration (§3 here) |
+| §2.2 `maludb_os_memory` / `maludb_os_mem` | **Replaced**: the tenant's database and memory schema from the existing application's configuration (§3 here) |
 | §2.3 the memory token | Minted against the tenant's database and role (§5 here) |
 | §3 clone to `/var/www` | After moving the existing application to `/var/www-previous-<date>` (§4 here) |
-| §4 the `certstudy` database | As written: a new database beside the tenant's |
+| §4 the `maludb_os` database | As written: a new database beside the tenant's |
 | §5 `config/.env` | `MALUDB_MEMORY_DB/USER/PASSWORD` are the tenant's; the rest as written |
 | §6 Apache | As written, after copying the previous default site and `ports.conf` aside |
 | §7–§14 | As written |

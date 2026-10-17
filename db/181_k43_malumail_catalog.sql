@@ -7,7 +7,7 @@
 -- Seeded in the unnamed top area beside those two, so every installation shows it ("from us, not installed") and the
 -- installer's apply finds its row. On request, not a default (D15). Additive.
 --
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/181_k43_malumail_catalog.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/181_k43_malumail_catalog.sql
 BEGIN;
 
 INSERT INTO application_catalog (catalog_key, name, description, icon, business_area_id, kind, vendor, category, sort_order)

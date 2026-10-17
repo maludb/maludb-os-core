@@ -31,7 +31,7 @@ on every state change · the PHP handlers as the **single write path for people 
 ## Target architecture
 
 ```
-browser ──► Apache :443 ──► Next.js (certstudy-web, :3000)      every screen, the Agent View
+browser ──► Apache :443 ──► Next.js (maludb-os-web, :3000)      every screen, the Agent View
                  │                 │  server components + server actions
                  │                 ▼
                  │          PHP on 127.0.0.1:8080 (internal vhost) ──► PostgreSQL
@@ -132,7 +132,7 @@ is done **once in `app/http.php`**, not 365 times:
 | --- | --- | --- |
 | **R0 Baseline** | Commit the in-flight projects/tasks slice; tag `pre-react`; record these decisions in CLAUDE.md, the build plan (2 copies) and the requirements (3 copies); freeze: no new PHP screens | — |
 | **R1 API foundation** | `wants_json()`, response helpers, presenter convention, header CSRF, `/api/v1/session`, JSON auth endpoints with cookie relay, internal vhost on :8080 (alongside the public one for now) | login → session → logout proven from a Next server action |
-| **R2 Web foundation** | `agentview` → `web`; route groups; Bootstrap shell; `lib/api.ts`; the kit; auth screens; command bar; Playwright smoke + 375px harness; `certstudy-web` unit | shell demo on the staging host name |
+| **R2 Web foundation** | `agentview` → `web`; route groups; Bootstrap shell; `lib/api.ts`; the kit; auth screens; command bar; Playwright smoke + 375px harness; `maludb-os-web` unit | shell demo on the staging host name |
 | **R3 Exemplar** | **Contacts/CRM end to end in React + JSON**, parity-checked against the PHP screens; then `docs/build-specs/react-slice-template.md` and the conversion recipe are written from it | **Owner approves the exemplar — nothing fans out before this** (same discipline as M1) |
 | **R4 Fan-out** | Worker-model conversions from per-module specs, one lane (git worktree) per module, review gate per wave. **A — shell-adjacent:** settings, team & access, members, notifications, activity, feed, my-work, tags/comments, approvals. **B — work & sales:** deals, sales/quotes/invoices/payments, projects, tasks. **C — money:** books, expenses. **D — agents & estate:** agent HR (the largest), applications, locations, org chart, dashboard, AI ops. The 11 one-file module stubs become one placeholder route | per wave: parity checklist, every manifest action still succeeds through the actions MCP, activity rows identical in kind |
 | **R5 Agent View** | Home route, `/api/v1/graph`, `AgentViewButton`, profile-panel deep links. Independent lane — runs in parallel with R4 | demo |
@@ -364,7 +364,7 @@ handler keeps the "needs no edit" rule. None is built yet.
   the key is ignored. Port 3000 must stay reachable only through the fronting proxy, since Next
   passes on the `X-Forwarded-For` it is given.
 - [x] **R2 started 2026-09-18.** `agentview/` → `web/` (history kept), unit renamed
-  `certstudy-web`. Route groups: `(agentview)` keeps the dark root layout; `(app)` is the
+  `maludb-os-web`. Route groups: `(agentview)` keeps the dark root layout; `(app)` is the
   Bootstrap nxl root layout with `html/assets` served at `/assets` (symlink in `web/public`).
   `web/lib/api.ts` is the platform client: cookie forwarding, CSRF pre-fetch, `ApiError`, and
   **session-cookie relay**. `/login` and `/login/2fa` are live with server actions. Verified
@@ -1029,7 +1029,7 @@ handler keeps the "needs no edit" rule. None is built yet.
   mail from a shared mailbox, signature request / reminder, purchase order, report delivery,
   portal invitation (sends); pay-run approve / paid, compensation change, stock write-off, AI
   usage post / void (money). 32 policies live, all active.
-  **PDF:** `certstudy-pdf` (systemd, `www-data`, 127.0.0.1:8820; `web/scripts/pdf-service.mjs`;
+  **PDF:** `maludb-os-pdf` (systemd, `www-data`, 127.0.0.1:8820; `web/scripts/pdf-service.mjs`;
   unit in `docs/deploy/`). It prints only this app's own pages — a relative path, loaded from
   the web app with the session cookie the caller hands it and `bos_quiet` — so a PDF holds what
   that person's screen would show. **Installed:** Playwright's headless Chromium to
@@ -1211,7 +1211,7 @@ handler keeps the "needs no edit" rule. None is built yet.
 - [x] **Stub modules — 6. Shared inbox (2026-09-19).** Spec: `docs/build-specs/inbox.md`.
   **Installed:** nothing (Python's `imaplib` / `email`). **Migration:** `db/110` — `search_tsv`
   appended to `mcp_mail_messages`, so `search_mail` (which runs as `app_records_ro`) has something
-  to search. **systemd:** `certstudy-inbox-poll.timer` (every 2 min, www-data), units in
+  to search. **systemd:** `maludb-os-inbox-poll.timer` (every 2 min, www-data), units in
   `docs/deploy/`, installed and enabled here.
   **Mail in — IMAP polling (owner's decision 6). Python parses, PHP files:**
   `mcp/inbox_poll.py` reads each active IMAP mailbox over TLS **read-only** (`select(readonly)`,
@@ -1474,7 +1474,7 @@ handler keeps the "needs no edit" rule. None is built yet.
   through a token-scoped relay (`/api/sign-document`), always as a download. Sequential order is
   enforced — the next signer's link is issued when the previous one signs.
   **The executed copy:** completion happens FIRST; then PHP mints a one-time render token and has
-  `certstudy-pdf` print `/sign/executed/<token>` — the written page in full, a signature block
+  `maludb-os-pdf` print `/sign/executed/<token>` — the written page in full, a signature block
   per signer, then the audit page (certificate id, fingerprint, every step with its address and
   browser) — and files the PDF as a NEW Document (`origin = generated`), tied to the same record.
   **Found by the smoke:** with the page not yet deployed the printer happily printed the LOGIN
@@ -1739,7 +1739,7 @@ handler keeps the "needs no edit" rule. None is built yet.
   88 / 88, `19-ai-ops` 49 / 49, `20-reports` 60 / 60 (not re-run, on purpose: `16-people` posts
   a real pay run each time, `13-inbox`'s fixture sender is suppressed by MaluMail, `18-portal-
   forms` trips its own rate limit, `2-…books` collides with its own fixed-date fiscal period).
-  Every `certstudy-*` service and both timers are up; `php -l` is clean over the 375 PHP files
+  Every `maludb-os-*` service and both timers are up; `php -l` is clean over the 375 PHP files
   changed since `5c917f2`; `tsc --noEmit` is clean.
 
 - [x] **The company's own logo (2026-09-22, db/134).** A super-admin uploads the logo on Business
@@ -1822,8 +1822,8 @@ blocks using what was built; each is a default that was taken, a piece left unbu
   media; ordinary invitation mail still carries cert-study wording; 16 older manifest rows carry
   a parameter the registry cannot parse; `fiscal_period_save` leaks a raw SQLSTATE and makes
   `mcp/smoke/2` collide with itself; the catch-all page's "not moved yet" wording is stale.
-- **Provisioning script** does not yet know about: Node + `certstudy-web`, `certstudy-pdf`
-  (Chromium under `/opt/ms-playwright`), `certstudy-inbox-poll.{service,timer}`,
+- **Provisioning script** does not yet know about: Node + `maludb-os-web`, `maludb-os-pdf`
+  (Chromium under `/opt/ms-playwright`), `maludb-os-inbox-poll.{service,timer}`,
   `poppler-utils`, composer's `rlanvin/php-rrule`, `python-dateutil` in the MCP venv, npm's
   `react-markdown` / `remark-gfm` / `chart.js` / `react-chartjs-2`, PHP's 25 MB upload ini, and
   `SECRETS_KEY`.

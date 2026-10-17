@@ -15,11 +15,11 @@
 set -euo pipefail
 ACTION="${1:-}"; ENVFILE=/etc/business-os/runner.env; CLAUDE_BIN="${CLAUDE_BIN:-/opt/claude-agent/bin/claude}"
 usage() { echo "usage: $0 on <token-file> [--force] | off | status" >&2; exit 1; }
-runs_going() { sudo -n -u postgres psql -d certstudy -Atc "SELECT count(*) FROM agent_runs WHERE status = 'running'" 2>/dev/null || echo "?"; }
+runs_going() { sudo -n -u postgres psql -d maludb_os -Atc "SELECT count(*) FROM agent_runs WHERE status = 'running'" 2>/dev/null || echo "?"; }
 
 restart_runner() {
-  sudo systemctl restart certstudy-agent-runner; sleep 3
-  systemctl is-active --quiet certstudy-agent-runner || { echo "The runner did not come back — restore ~/env-backups/runner.env.$STAMP" >&2; exit 1; }
+  sudo systemctl restart maludb-os-agent-runner; sleep 3
+  systemctl is-active --quiet maludb-os-agent-runner || { echo "The runner did not come back — restore ~/env-backups/runner.env.$STAMP" >&2; exit 1; }
 }
 backup_env() {
   STAMP=$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$HOME/env-backups"; umask 077

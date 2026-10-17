@@ -15,7 +15,7 @@ declare(strict_types=1);
  *          --scheme http|https (default: http — the owner's proxy terminates TLS)   --tenant <db prefix> (default: the
  *          domain's first label)   --ref <git tag or commit> (when cloning)   --hire-agents (hire every agents[] entry — the
  *          default applications' rule; otherwise they are proposed)   --grant-standing-departments (every standing
- *          department gets the application's member role at write — K4)   --no-restart (never restart certstudy-actions-mcp)
+ *          department gets the application's member role at write — K4)   --no-restart (never restart maludb-os-actions-mcp)
  *
  * What stays the owner's: DNS for <label>.<domain>, TLS, and any grant not named here. A name that does not resolve
  * yet gets a loopback line in /etc/hosts, and the plan says so.
@@ -720,11 +720,11 @@ if (!is_file($registrySrc)) {
     if (is_file($target) && file_get_contents($target) === $json) {
         say('registry', 'done', basename($target) . " is current ({$built} built actions" . ($file['resolve'] === [] ? ', no resolve block' : '') . ')');
     } else {
-        say('registry', 'todo', (is_file($target) ? 'refresh ' : 'write ') . "mcp/registries/{$key}.json ({$built} built actions)" . (empty($opts['no-restart']) ? ' and restart certstudy-actions-mcp' : ''));
+        say('registry', 'todo', (is_file($target) ? 'refresh ' : 'write ') . "mcp/registries/{$key}.json ({$built} built actions)" . (empty($opts['no-restart']) ? ' and restart maludb-os-actions-mcp' : ''));
         if ($APPLY) {
             if (@file_put_contents($target, $json) === false) { stop('registry', "could not write {$target}"); }
             sh('chmod 644 ' . escapeshellarg($target) . ' && chown ' . escapeshellarg((string) (getenv('SUDO_USER') ?: 'root')) . ':www-data ' . escapeshellarg($target), true);
-            if (empty($opts['no-restart'])) { sh('systemctl restart certstudy-actions-mcp'); }
+            if (empty($opts['no-restart'])) { sh('systemctl restart maludb-os-actions-mcp'); }
         }
     }
 }

@@ -18,7 +18,7 @@
 -- application rows, approval policies, tool grants — shrinks to the kernel's set.
 --
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/133_kernel_cut.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/133_kernel_cut.sql
 
 BEGIN;
 

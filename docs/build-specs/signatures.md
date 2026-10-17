@@ -56,7 +56,7 @@ drawn signature** → Sign, or Decline with a reason.
 
 ## The executed copy
 When the last signer signs the request is `completed` **first**; then PHP mints a one-time
-render token and asks `certstudy-pdf` to print `/sign/executed/<render-token>` — a public,
+render token and asks `maludb-os-pdf` to print `/sign/executed/<render-token>` — a public,
 minimal React page fed by `html/sign/executed.php`: a written page in full, then a signature
 block per signer (typed name, drawn signature, when, from where), then the audit trail and the
 document hash. The PDF becomes a NEW Document (`origin = generated`, the request's department,

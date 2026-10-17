@@ -5,7 +5,7 @@
 -- registration.md). The catalog row is added by the installation agent or by hand
 -- (application_catalog_save) before the application is registered against it. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/139_ours_kind.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/139_ours_kind.sql
 
 BEGIN;
 ALTER TABLE application_catalog DROP CONSTRAINT application_catalog_kind_check;

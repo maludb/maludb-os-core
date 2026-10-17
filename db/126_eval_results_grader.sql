@@ -12,7 +12,7 @@
 --
 -- Additive; the view is replaced with the same rows and the same rule (people only).
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/126_eval_results_grader.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/126_eval_results_grader.sql
 
 BEGIN;
 

@@ -7,7 +7,7 @@
 -- K7: a provider application shares named read tools (application_shares, from its maludb-os.json); a consumer asks
 -- the kernel to call one over a connection a super-admin approved (application_connections).
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/161_app_services.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/161_app_services.sql
 
 BEGIN;
 

@@ -6,7 +6,7 @@
 -- with an endpoint_url on every row and no key: the runner maps a provider to its key.
 --
 -- Widens one CHECK; every existing row stays valid. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/121_model_provider_fireworks.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/121_model_provider_fireworks.sql
 
 BEGIN;
 

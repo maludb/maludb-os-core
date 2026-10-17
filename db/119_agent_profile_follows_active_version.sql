@@ -12,7 +12,7 @@
 -- the existing rows in line, once. A version with no budget of its own leaves the profile's alone.
 --
 -- Data repair only; no structure changes. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/119_agent_profile_follows_active_version.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/119_agent_profile_follows_active_version.sql
 
 BEGIN;
 

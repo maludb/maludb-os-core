@@ -6,7 +6,7 @@ Documentation=file:///var/www/docs/react-migration-plan.md
 #   sudo chown -R maludb:maludb /var/www/web/.next      # hand the build back
 #   cd /var/www/web && npm install && npm run build      # build as the deploy user
 #   sudo chown -R www-data:www-data /var/www/web/.next   # hand it to the service
-#   sudo systemctl restart certstudy-web
+#   sudo systemctl restart maludb-os-web
 # Skipping the first step fails with EACCES on .next/trace; skipping the third leaves the
 # service unable to write its own cache.
 #

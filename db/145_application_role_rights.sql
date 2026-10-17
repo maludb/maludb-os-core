@@ -7,7 +7,7 @@
 -- of roles. A role the application stops publishing is withdrawn, never deleted, so the grants that
 -- still hold it can be shown and fixed. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/145_application_role_rights.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/145_application_role_rights.sql
 
 BEGIN;
 

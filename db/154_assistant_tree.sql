@@ -13,7 +13,7 @@
 -- person it talks to. Its reach is its person's (app_agent_reach_department_ids()). Every delegation
 -- records where it went and why (agent_runs.delegated_department_id, delegation_reason). Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/154_assistant_tree.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/154_assistant_tree.sql
 
 BEGIN;
 

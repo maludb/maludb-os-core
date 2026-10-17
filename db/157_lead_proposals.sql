@@ -7,7 +7,7 @@
 -- proposal is a row, not an agent: a super-admin confirms it in one click (the hire happens then, logged
 -- as any hire) or declines it. Nothing is hired unconfirmed. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/157_lead_proposals.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/157_lead_proposals.sql
 
 BEGIN;
 

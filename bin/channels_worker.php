@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Telegram endpoint (nothing public), turns each message into an agent message through channel_inbound(),
  * looks for unread mail in every agent mailbox once a minute (the MaluMail webhook's safety net), and sends
  * what agents wrote to people on Telegram, SMS and email (channel_deliver_pending()). One process,
- * run by systemd (docs/deploy/certstudy-channels.service) as www-data.
+ * run by systemd (docs/deploy/maludb-os-channels.service) as www-data.
  *
  *   php bin/channels_worker.php            # forever
  *   php bin/channels_worker.php --once     # one pass, for a test

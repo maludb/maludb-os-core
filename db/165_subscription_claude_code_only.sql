@@ -5,7 +5,7 @@
 -- Anthropic's client to use a subscription. The official CLI does not: it IS the client. So the feature is limited to
 -- claude_agent_sdk, and the two Hermes "Max plan" twin rows db/164 seeded are removed (nothing referenced them).
 -- Additive in effect: no agent ever used them. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/165_subscription_claude_code_only.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/165_subscription_claude_code_only.sql
 
 BEGIN;
 

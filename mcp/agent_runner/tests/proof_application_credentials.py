@@ -1,9 +1,9 @@
 """K24 proof (db/171) — an application's credential at the ledger proxy, end to end, on a SCRATCH database.
 
-Not part of the unit suite: it needs certstudy_k24_scratch (a schema-only copy), a login role that holds only app_runner's
+Not part of the unit suite: it needs maludb_os_k24_scratch (a schema-only copy), a login role that holds only app_runner's
 privileges, and a minted credential. Run (see docs/build-specs/kernel-application-model-credentials.md):
 
-  APPM_KEY=appm_… RUNNER_DB_NAME=certstudy_k24_scratch RUNNER_DB_USER=k24_runner_scratch RUNNER_DB_PASSWORD=… \
+  APPM_KEY=appm_… RUNNER_DB_NAME=maludb_os_k24_scratch RUNNER_DB_USER=k24_runner_scratch RUNNER_DB_PASSWORD=… \
   PROXY_KEY_SECRET=<32+ chars> RUNNER_ENV_FILE=/nonexistent mcp/venv/bin/python mcp/agent_runner/tests/proof_application_credentials.py
 """
 import asyncio, os, sys, threading, time

@@ -2,7 +2,7 @@
 -- application_shares.people marks such a tool (maludb-os.json shares[] "people": true). The kernel lets only a consumer
 -- application registered for directory writes — HR, the one application that changes the directory — read it, and
 -- only over a connection a super-admin approved. Additive.
--- Run as postgres:  sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/162_person_level_shares.sql
+-- Run as postgres:  sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/162_person_level_shares.sql
 BEGIN;
 ALTER TABLE application_shares ADD COLUMN people boolean NOT NULL DEFAULT false;
 COMMENT ON COLUMN application_shares.people IS 'The tool answers about members, keyed by the kernel''s member id — only a consumer with directory_writes may read it (db/162).';

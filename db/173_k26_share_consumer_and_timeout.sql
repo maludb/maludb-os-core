@@ -7,7 +7,7 @@
 -- identity must never reach a provider. This file adds the one column the timeout needs: the seconds the kernel
 -- waits for a share's answer, from the provider's maludb-os.json shares[].timeout_seconds (default 8, at most 60).
 --
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/173_k26_share_consumer_and_timeout.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/173_k26_share_consumer_and_timeout.sql
 
 ALTER TABLE application_shares
     ADD COLUMN timeout_seconds smallint NOT NULL DEFAULT 8 CHECK (timeout_seconds BETWEEN 1 AND 60);

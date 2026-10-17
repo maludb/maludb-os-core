@@ -9,7 +9,7 @@
 -- person — and records which run each message woke (woke_run_id), so no message wakes twice.
 -- Guards: a thread's hop count (12) and 30 messages an hour between any two members. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/155_agent_messages.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/155_agent_messages.sql
 
 BEGIN;
 

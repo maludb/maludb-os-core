@@ -11,7 +11,7 @@
 -- those are already in prompt_payloads, and this table stays small enough to keep for good.
 --
 -- Additive. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/122_agent_run_events.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/122_agent_run_events.sql
 
 BEGIN;
 

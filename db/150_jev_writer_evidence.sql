@@ -9,7 +9,7 @@
 -- prompt ledger (every model call's full context) stays closed. Additive; the views' columns are
 -- unchanged, so their grants stand.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/150_jev_writer_evidence.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/150_jev_writer_evidence.sql
 
 BEGIN;
 

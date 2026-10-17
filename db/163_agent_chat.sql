@@ -5,7 +5,7 @@
 -- the conversation that groups the turns and belongs to ONE person. Owner decision: conversations
 -- are private to their person; the runs stay visible wherever runs are visible today. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/163_agent_chat.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/163_agent_chat.sql
 
 BEGIN;
 

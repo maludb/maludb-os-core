@@ -86,7 +86,7 @@ async def run(member_id: int, path: str) -> int:
                     # A create answers a sentence, not an id — so ids are read back, as postgres,
                     # from the base tables. {"lookup": {"org": "SELECT id FROM … WHERE name = '…'"}}
                     for name, sql in step["lookup"].items():
-                        got = subprocess.run(["sudo", "-n", "-u", "postgres", "psql", "-d", "certstudy", "-Atc", fill(sql, saved)],
+                        got = subprocess.run(["sudo", "-n", "-u", "postgres", "psql", "-d", "maludb_os", "-Atc", fill(sql, saved)],
                                              capture_output=True, text=True).stdout.strip().split("\n")[0]
                         saved[name] = got
                         print(f"     {i:3} lookup {name} = {got!r}")

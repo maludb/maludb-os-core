@@ -17,7 +17,7 @@ sudo uv pip install --python /opt/hermes/venv/bin/python /var/www/mcp/bos_hermes
 sudo chmod -R go-w /opt/hermes
 
 # 3. Database: db/097, 099, 100, 101 as postgres; then give the role a password.
-sudo -u postgres psql -d certstudy -c "ALTER ROLE app_runner PASSWORD '…'"
+sudo -u postgres psql -d maludb_os -c "ALTER ROLE app_runner PASSWORD '…'"
 
 # 4. Secrets: /etc/business-os/runner.env from runner.env.example (root:bos-runner 0640);
 #    ACTIONS_RELAY_KEY and RUNNER_KEY added to config/.env.
@@ -25,9 +25,9 @@ sudo -u postgres psql -d certstudy -c "ALTER ROLE app_runner PASSWORD '…'"
 # 5. The sandboxed launcher, its sudoers rule, the unit.
 sudo install -o root -g root -m 0755 docs/deploy/bos-agent-exec /usr/local/sbin/bos-agent-exec
 sudo install -o root -g root -m 0440 docs/deploy/bos-runner.sudoers /etc/sudoers.d/bos-runner && sudo visudo -cf /etc/sudoers.d/bos-runner
-sudo install -m 0644 docs/deploy/certstudy-agent-runner.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now certstudy-agent-runner
-sudo systemctl restart certstudy-records-mcp certstudy-activity-mcp certstudy-actions-mcp   # run tokens + grant enforcement
+sudo install -m 0644 docs/deploy/maludb-os-agent-runner.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now maludb-os-agent-runner
+sudo systemctl restart maludb-os-records-mcp maludb-os-activity-mcp maludb-os-actions-mcp   # run tokens + grant enforcement
 curl -s http://127.0.0.1:8815/health
 ```
 

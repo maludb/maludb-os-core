@@ -31,7 +31,7 @@ TMP=$(mktemp); trap 'rm -f "$TMP"' EXIT
 sudo cat "$ENVFILE" | grep -v "^$VAR=" > "$TMP" || true
 printf '%s=%s\n' "$VAR" "$KEY" >> "$TMP"
 sudo install -m "$(sudo stat -c %a "$ENVFILE")" -o "$(sudo stat -c %U "$ENVFILE")" -g "$(sudo stat -c %G "$ENVFILE")" "$TMP" "$ENVFILE"
-sudo systemctl restart certstudy-agent-runner
+sudo systemctl restart maludb-os-agent-runner
 sleep 3
-systemctl is-active --quiet certstudy-agent-runner && echo "$PROVIDER key installed ($VAR); runner restarted; backup: ~/env-backups/runner.env.$STAMP" \
+systemctl is-active --quiet maludb-os-agent-runner && echo "$PROVIDER key installed ($VAR); runner restarted; backup: ~/env-backups/runner.env.$STAMP" \
   || { echo "The runner did not come back — restore ~/env-backups/runner.env.$STAMP" >&2; exit 1; }

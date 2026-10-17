@@ -15,7 +15,7 @@
 -- agent callers, and the runner is not a person either).
 --
 -- Additive. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/125_runner_reads_evals.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/125_runner_reads_evals.sql
 
 BEGIN;
 

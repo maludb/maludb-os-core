@@ -8,7 +8,7 @@
 -- path cannot be signed in to: the launcher opens its address as it is.
 --
 -- Additive: two columns, appended last to the two views they travel on. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/135_application_sign_on.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/135_application_sign_on.sql
 
 BEGIN;
 

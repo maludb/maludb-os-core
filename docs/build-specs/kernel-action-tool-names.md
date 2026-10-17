@@ -47,7 +47,7 @@ the name an agent calls changes. A single underscore, not `__`: Claude Code addr
 ```
 php bin/actions_tool_names.php plan       # read-only: 1,149 of 1,149 served after, 356 prefixed, 148 grants to move, 0 left
 php bin/actions_tool_names.php apply
-sudo systemctl restart certstudy-actions-mcp
+sudo systemctl restart maludb-os-actions-mcp
 php bin/test_action_tool_names.php
 ```
 

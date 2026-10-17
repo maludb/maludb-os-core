@@ -8,7 +8,7 @@
 -- apply failed at register); the PHP list APPLICATION_CATEGORIES is widened in the same change. Seeded so every installation shows
 -- it under Finance ("from us, not installed") and the installer's apply finds its row. On request, not a default. Additive.
 --
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/178_k34_shareholder_intelligence_catalog.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/178_k34_shareholder_intelligence_catalog.sql
 BEGIN;
 
 ALTER TABLE application_catalog DROP CONSTRAINT application_catalog_category_check;

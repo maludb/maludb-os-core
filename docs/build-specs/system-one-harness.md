@@ -74,7 +74,7 @@ They are editable per set, in the same editor as case checks.
 
 | Playbook | What it does |
 |---|---|
-| `health` | Deterministic probes, no JEV. Is every `certstudy-*`, application (`hr-*`) and `maludb-api` unit active? Checks disk and memory headroom (swap as well); the age of the last good backup (`backup_runs`); each application's `/api/v1/health`; the kernel and application versions. A breach is an alert with the probe's own words |
+| `health` | Deterministic probes, no JEV. Is every `maludb-os-*`, application (`hr-*`) and `maludb-api` unit active? Checks disk and memory headroom (swap as well); the age of the last good backup (`backup_runs`); each application's `/api/v1/health`; the kernel and application versions. A breach is an alert with the probe's own words |
 | `logs_and_guardrails` | Collects new lines since its cursor from the sources below, **redacts them**, groups them by fingerprint (the line with numbers, ids and times masked), and asks JEV about each **new** fingerprint only. Confident critical → alert. Unsure → escalate to the IT manager. Noise → recorded and muted |
 
 **Log sources, read by the collector (never by the agent):**
@@ -263,6 +263,6 @@ switched on for this. Budgets: JEV at about $0.00002 per decision, so pennies a 
   proof set is retired again.
 
 **What the first shadow passes found on this server (real):**
-- `certstudy-inbox-poll` is failed. It was retired in the kernel cut, and its unit file was never removed.
+- `maludb-os-inbox-poll` is failed. It was retired in the kernel cut, and its unit file was never removed.
 - No backup has ever been recorded.
 - The landing site answers a steady stream of requests for PHP scripts that do not exist.

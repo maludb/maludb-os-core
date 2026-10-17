@@ -10,13 +10,13 @@
 
 | Server | Systemd unit | Port | Reads / writes | Who reaches it | What it is for |
 | --- | --- | --- | --- | --- | --- |
-| **Records** (`certstudy_records_mcp`) | `certstudy-records-mcp` | 8811 | Read-only, role `app_records_ro`, `mcp_*` views only | People and agents; public at `/mcp/records` | The business's record memory: every "what is / who is / how many" question about customers, money, work, people and estate. **125 tools.** |
-| **Activity** (`certstudy_activity_mcp`) | `certstudy-activity-mcp` | 8812 | Read-only, role `app_activity_ro` | People and agents; public at `/mcp/activity` | Who did what and when: the audit trail behind every record. **9 tools.** |
-| **Actions** (`certstudy_actions_mcp`) | `certstudy-actions-mcp` | 8813 | **Writes** — POSTs to the PHP handlers as the caller | The assistant and hired agents only; **not** on the public port | Everything that changes state, plus screen navigation. One tool per built manifest action. **335 tools.** |
-| **Memory** (`certstudy_memory_mcp`) | `certstudy-memory-mcp` | 8814 | Read-only over MaluDB; holds the tenant token so no one else does | Agents and people; **not** on the public port | Shared memory (what we know, what was said before, standing facts). Writes are manifest actions, never here. **3 tools.** |
-| **Assistant** (`certstudy-assistant`) | `certstudy-assistant` | 8765 | — | The command bar in the web app | Not an MCP server: the LLM router that consumes the Records, Activity and Actions tools on behalf of the person typing. |
+| **Records** (`maludb_os_records_mcp`) | `maludb-os-records-mcp` | 8811 | Read-only, role `app_records_ro`, `mcp_*` views only | People and agents; public at `/mcp/records` | The business's record memory: every "what is / who is / how many" question about customers, money, work, people and estate. **125 tools.** |
+| **Activity** (`maludb_os_activity_mcp`) | `maludb-os-activity-mcp` | 8812 | Read-only, role `app_activity_ro` | People and agents; public at `/mcp/activity` | Who did what and when: the audit trail behind every record. **9 tools.** |
+| **Actions** (`maludb_os_actions_mcp`) | `maludb-os-actions-mcp` | 8813 | **Writes** — POSTs to the PHP handlers as the caller | The assistant and hired agents only; **not** on the public port | Everything that changes state, plus screen navigation. One tool per built manifest action. **335 tools.** |
+| **Memory** (`maludb_os_memory_mcp`) | `maludb-os-memory-mcp` | 8814 | Read-only over MaluDB; holds the tenant token so no one else does | Agents and people; **not** on the public port | Shared memory (what we know, what was said before, standing facts). Writes are manifest actions, never here. **3 tools.** |
+| **Assistant** (`maludb-os-assistant`) | `maludb-os-assistant` | 8765 | — | The command bar in the web app | Not an MCP server: the LLM router that consumes the Records, Activity and Actions tools on behalf of the person typing. |
 
-Supporting services (not MCP): `certstudy-agent-runner` (runner API 8815 and prompt-ledger proxy 8816) runs hired agents and hands each run a scoped token; `certstudy-activity-ingest.timer` ships `activity_log` to MaluDB every minute.
+Supporting services (not MCP): `maludb-os-agent-runner` (runner API 8815 and prompt-ledger proxy 8816) runs hired agents and hands each run a scoped token; `maludb-os-activity-ingest.timer` ships `activity_log` to MaluDB every minute.
 
 ### How every call is authorised
 

@@ -73,11 +73,11 @@ INSERT INTO application_endpoints
 SELECT a.id, v.name, v.kind, v.url, v.auth, false, v.notes
   FROM applications a,
        (VALUES
-         ('postgres', 'Primary database', 'database', 'postgresql://localhost:5432/certstudy',
+         ('postgres', 'Primary database', 'database', 'postgresql://localhost:5432/' || current_database(),
           'basic', 'Roles: app_rw (the app), app_records_ro and app_activity_ro (the MCP read '
           'servers, views only, no base-table grants).'),
          ('maludb', 'MaluDB API', 'http_api', 'http://localhost:8000',
-          'bearer', 'Tenant memory database certstudy_memory; token minted by POST /v1/tokens.')
+          'bearer', 'Tenant memory database maludb_os_memory; token minted by POST /v1/tokens.')
        ) AS v(app_key, name, kind, url, auth, notes)
  WHERE a.app_key = v.app_key
    AND NOT EXISTS (SELECT 1 FROM application_endpoints e

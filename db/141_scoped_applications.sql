@@ -7,7 +7,7 @@
 -- business trades from, not a machine. Application users are not OS users: nothing is granted by
 -- default. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/141_scoped_applications.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/141_scoped_applications.sql
 
 BEGIN;
 

@@ -56,7 +56,7 @@ Backups of both env files as they were: `~/env-backups/` (outside the repo, mode
 
 ## The flip (needs the owner's go) — in this order
 
-1. **Tag** `pre-cutover` on main; `pg_dump certstudy` to a dated file; copy
+1. **Tag** `pre-cutover` on main; `pg_dump maludb_os` to a dated file; copy
    `/etc/apache2/sites-enabled/000-default.conf` aside. *(Way back for everything below.)*
 2. **Manifest smoke through the assistant** — every action in the manifest still succeeds
    through the actions MCP. This writes real rows, so it runs against records the owner names
@@ -76,7 +76,7 @@ Backups of both env files as they were: `~/env-backups/` (outside the repo, mode
    `view()` calls — JSON mode becomes the only mode), `htmx.min.js` and the jQuery vendor bundle
    the React shell never loads, the legacy cert-study screens and their nav entries (tables
    stay). Mail templates point at the React paths. Action registry regenerated.
-7. Tenant provisioning script gains Node + the `certstudy-web` unit; `CLAUDE.md` loses the
+7. Tenant provisioning script gains Node + the `maludb-os-web` unit; `CLAUDE.md` loses the
    HTMX rules and the `new-screen` skill reference; requirements (3 copies) and build plan
    (2 copies) synced; tag `react-cutover`.
 8. R7: build-plan phases 3–6 resume on the React slice template.
@@ -97,7 +97,7 @@ Backups of both env files as they were: `~/env-backups/` (outside the repo, mode
 
 ## As run (2026-09-19)
 
-1. **Safety net**: tag `pre-cutover`; `pg_dump -Fc certstudy` (172 tables, verified readable),
+1. **Safety net**: tag `pre-cutover`; `pg_dump -Fc maludb_os` (172 tables, verified readable),
    the Apache vhost and `ports.conf` copied to `~/cutover-backups/`.
 2. **The agents' door fixed first** (`docs/action-smoke-2026-09-19.md`), and the actions server
    moved to JSON mode — smoke-tested before anything was deleted.
@@ -130,6 +130,6 @@ the build plan (2 copies) have not been synced to say the cut-over happened;
 
 **Way back:** `sudo cp ~/cutover-backups/000-default.conf.pre-cutover
 /etc/apache2/sites-enabled/000-default.conf`, same for `ports.conf`, remove
-`/etc/systemd/system/certstudy-web.service.d/cutover.conf`, `git checkout pre-cutover`, reload
-Apache, restart `certstudy-web` and `certstudy-actions-mcp`. The database needs no restore for
+`/etc/systemd/system/maludb-os-web.service.d/cutover.conf`, `git checkout pre-cutover`, reload
+Apache, restart `maludb-os-web` and `maludb-os-actions-mcp`. The database needs no restore for
 that — db/103 is compatible with the old code.
