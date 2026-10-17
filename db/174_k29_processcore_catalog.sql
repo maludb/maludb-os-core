@@ -6,7 +6,7 @@
 -- the same change. Seeded so every installation shows it under Operations ("from us, not installed") and the installer's apply
 -- finds its row. On request, not a default. Additive.
 --
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/174_k29_processcore_catalog.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/174_k29_processcore_catalog.sql
 BEGIN;
 
 ALTER TABLE application_catalog DROP CONSTRAINT application_catalog_category_check;

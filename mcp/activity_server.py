@@ -1,4 +1,4 @@
-"""certstudy_activity_mcp — activity-memory MCP server (MaluDB / activity_log, read-only).
+"""maludb_os_activity_mcp — activity-memory MCP server (MaluDB / activity_log, read-only).
 
 Reads the mcp_activity_* views, which scope to the caller (own trail + public feed;
 organizers additionally get the community stream). Read-only by construction.
@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 import db
 
 RO = {"readOnlyHint": True, "openWorldHint": False}
-mcp = FastMCP("certstudy_activity_mcp")
+mcp = FastMCP("maludb_os_activity_mcp")
 
 
 async def _pool():

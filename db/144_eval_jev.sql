@@ -7,7 +7,7 @@
 -- `grader_detail`, also when a person grades, so agreement can be measured (mcp_eval_check_calibration).
 -- Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/144_eval_jev.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/144_eval_jev.sql
 
 BEGIN;
 ALTER TABLE eval_cases DROP CONSTRAINT eval_cases_grader_check;

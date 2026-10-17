@@ -36,7 +36,7 @@ cron, delegation or built-in memory, which stay **off** — the platform is the 
 
 | Unit | Port | Unix user | Notes |
 |---|---|---|---|
-| `certstudy-agent-runner` | 127.0.0.1:**8815** (runner API) and **8816** (ledger proxy) | **`bos-runner`** — *not* in `www-data`, cannot read `config/.env` | reads its own `/etc/business-os/runner.env` (root:bos-runner 0640): `RUNNER_DB_PASSWORD`, `ACTION_TOKEN_KEY`, `ACTIONS_RELAY_KEY`, `PROXY_KEY_SECRET`, provider API keys |
+| `maludb-os-agent-runner` | 127.0.0.1:**8815** (runner API) and **8816** (ledger proxy) | **`bos-runner`** — *not* in `www-data`, cannot read `config/.env` | reads its own `/etc/business-os/runner.env` (root:bos-runner 0640): `RUNNER_DB_PASSWORD`, `ACTION_TOKEN_KEY`, `ACTIONS_RELAY_KEY`, `PROXY_KEY_SECRET`, provider API keys |
 | Hermes subprocess (one per run) | — | **`bos-agent`** via `systemd-run --uid` | `ProtectSystem=strict`, `PrivateTmp`, `NoNewPrivileges`, `ProtectHome`, `ReadWritePaths=` its own profile + outbox, `IPAddressDeny=any` + `IPAddressAllow=127.0.0.1`: it can reach nothing off the box, and on the box it holds a credential only for the ledger proxy and the MCP servers |
 | Hermes install | — | root-owned, read-only | `/opt/hermes/{src,venv}` pinned to a tag + SHA; upgrade = bump → `run_conformance.py` → evals |
 | Profiles | — | `bos-runner` writes, `bos-agent` reads (own `state.db`/logs writable) | `/var/lib/business-os/agents/<member_id>/` |
@@ -46,7 +46,7 @@ Provider keys move out of `config/.env` for agent use: they live only in the run
 via `model_registry.api_secret_id` and `runner.env` loses them. Until then a second provider is one
 more line in `runner.env`.)
 
-## Schema — `db/drafts/097_agent_runtime.sql` (dry-run clean against `certstudy`, rolled back)
+## Schema — `db/drafts/097_agent_runtime.sql` (dry-run clean against `maludb_os`, rolled back)
 
 1. `'hermes'` joins `model_registry.harness`. A registry row is a *(model, harness)* pair.
 2. `agent_config_versions.runtime_config jsonb` — the harness's own immutable settings
@@ -174,7 +174,7 @@ app/features/agents/models.php                (MODEL_HARNESSES += 'hermes')
 html/agents/run-duty.php  html/agents/run.php  html/agents/run-cancel.php  html/agents/run-callback.php
 html/agents/tool-grant.php
 web/components/settings/ModelForm.tsx  web/lib/schemas/agents.ts       (harness option only)
-docs/deploy/certstudy-agent-runner.service  docs/deploy/runner.env.example  docs/deploy/hermes-install.md
+docs/deploy/maludb-os-agent-runner.service  docs/deploy/runner.env.example  docs/deploy/hermes-install.md
 ```
 PHP follows `php-patterns`; `run.php` and `run-cancel.php` are dual-mode (`wants_json()`), report through
 `emit_action_status()`, and carry `require_post()` + `verify_csrf()` + gate + `log_activity()`.
@@ -221,7 +221,7 @@ Built in H2 — already designed in the tool surface, unbuildable until rows exi
 | --- | --- | --- | --- | --- | --- |
 | `agent_runs` | What an agent is doing or did: runs by status, trigger, duty, cost; what is running right now across the organisation; the runs a delegation spawned | H4, DB7, PL7 | `mcp_agent_runs` | `agent_member_id?`, `status?`, `period?`, `parent_run_id?` | hr or agent's manager; agents: own runs |
 
-Fixed now for later stages — **server `certstudy_memory_mcp`, port 8814** (H4), reads only:
+Fixed now for later stages — **server `maludb_os_memory_mcp`, port 8814** (H4), reads only:
 
 | Tool | Call it when | Answers | Reads | Key params | Gate |
 | --- | --- | --- | --- | --- | --- |

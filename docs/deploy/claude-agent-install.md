@@ -21,7 +21,7 @@ sudo install -o root -g root -m 0755 docs/deploy/bos-agent-exec /usr/local/sbin/
 cd /var/www/mcp/claude_conformance && python3 run_conformance.py --claude /opt/claude-agent/bin/claude
 
 # 4. Restart the runner; /health must now list both harnesses.
-sudo systemctl restart certstudy-agent-runner
+sudo systemctl restart maludb-os-agent-runner
 curl -s http://127.0.0.1:8815/health       # {"ok":true,"running":[],"harnesses":["claude_agent_sdk","hermes"]}
 ```
 

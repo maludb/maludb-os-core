@@ -16,7 +16,7 @@ Roles: **`app_records_ro`** (record server) · **`app_activity_ro`** (activity s
 
 ---
 
-## Record server — `certstudy_records_mcp` (role `app_records_ro`)
+## Record server — `maludb_os_records_mcp` (role `app_records_ro`)
 
 | Tool | Answers | Backing view(s) | Key params |
 |---|---|---|---|
@@ -52,7 +52,7 @@ Roles: **`app_records_ro`** (record server) · **`app_activity_ro`** (activity s
 
 ---
 
-## Activity server — `certstudy_activity_mcp` (role `app_activity_ro`)
+## Activity server — `maludb_os_activity_mcp` (role `app_activity_ro`)
 
 | Tool | Answers | Backing view(s) | Key params |
 |---|---|---|---|

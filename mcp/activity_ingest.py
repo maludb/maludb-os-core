@@ -1,6 +1,6 @@
-"""Activity-memory ingestion bridge: certstudy.activity_log -> MaluDB episodes.
+"""Activity-memory ingestion bridge: maludb_os.activity_log -> MaluDB episodes.
 
-Runs on a systemd timer (certstudy-activity-ingest.timer). Each run:
+Runs on a systemd timer (maludb-os-activity-ingest.timer). Each run:
   1. reads the checkpoint from activity_ingest_state,
   2. fetches activity_log rows past it (oldest first, bounded batch),
   3. POSTs each row to the MaluDB API as an 'activity' episode
@@ -64,7 +64,7 @@ async def main() -> int:
     con = await asyncpg.connect(
         host=ENV.get("DB_HOST", "127.0.0.1"),
         port=int(ENV.get("DB_PORT", "5432")),
-        database=ENV.get("DB_NAME", "certstudy"),
+        database=ENV.get("DB_NAME", "maludb_os"),
         user=ENV.get("DB_USER", "app_rw"),
         password=ENV.get("DB_PASSWORD", ""),
     )

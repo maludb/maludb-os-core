@@ -83,7 +83,7 @@ policy *Agents: writing shared memory* (`category='other'`, `action_pattern='mem
 
 ```
 db/104_memory_endpoint.sql
-mcp/memory_server.py  mcp/maludb_client.py                  docs/deploy/certstudy-memory-mcp.service
+mcp/memory_server.py  mcp/maludb_client.py                  docs/deploy/maludb-os-memory-mcp.service
 app/features/memory/maludb.php  app/features/memory/scope.php
 html/memory/remember.php  html/memory/core-set.php
 mcp/agent_runner/memory.py  (+ hermes_render.py, hermes_harness.py, service.py, config.py, store.py)
@@ -103,7 +103,7 @@ mcp/agent_runner/memory.py  (+ hermes_render.py, hermes_harness.py, service.py, 
 
 ## Known limit, owner's decision
 
-`certstudy_memory` has **no embedding model configured** (checked 2026-09-19): MaluDB falls back to
+`maludb_os_memory` has **no embedding model configured** (checked 2026-09-19): MaluDB falls back to
 deterministic hash vectors, so ranking *within* a result set is arbitrary. Isolation does not
 depend on it — namespace and subject filters are exact — but recall quality does. The catalog
 offers OpenAI `text-embedding-3-small` (needs an OpenAI key) or a local Ollama model. Configure one

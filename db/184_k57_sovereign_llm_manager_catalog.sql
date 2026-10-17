@@ -8,7 +8,7 @@
 -- widened. Seeded so every installation shows it under Technology & Infrastructure ("from us, not installed") and the installer's
 -- apply finds its row. On request, not a default. Additive.
 --
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/184_k57_sovereign_llm_manager_catalog.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/184_k57_sovereign_llm_manager_catalog.sql
 BEGIN;
 
 INSERT INTO application_catalog (catalog_key, name, description, icon, business_area_id, kind, vendor, category, sort_order)

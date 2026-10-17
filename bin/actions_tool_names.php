@@ -8,7 +8,7 @@ declare(strict_types=1);
  *   php bin/actions_tool_names.php [plan]            read-only: what would be renamed and which grants would move
  *   php bin/actions_tool_names.php apply [--by email] writes `tool_name` into mcp/registries/*.json (a copy of each file kept in
  *                                                    mcp/registries/backup-<time>/), moves the grants in one transaction, and
- *                                                    says to restart certstudy-actions-mcp
+ *                                                    says to restart maludb-os-actions-mcp
  *
  * The rule (app/features/applications/action_tool_names.php): an action keeps its own name when no other application and no
  * kernel action uses it; a shared name becomes "<app_key>_<action>" for every application that has it. A live grant on the
@@ -121,7 +121,7 @@ foreach ($moves as $mv) {
 foreach ($unclear as $u) { echo "  LEFT  {$u}\n"; }
 
 if ($mode === 'plan') {
-    echo "\nPlan only — nothing changed. To apply: php bin/actions_tool_names.php apply, then sudo systemctl restart certstudy-actions-mcp\n";
+    echo "\nPlan only — nothing changed. To apply: php bin/actions_tool_names.php apply, then sudo systemctl restart maludb-os-actions-mcp\n";
     exit($clashes === [] ? 0 : 1);
 }
 
@@ -168,4 +168,4 @@ try {
     exit(1);
 }
 echo "\nApplied: {$written} registry file(s) written" . ($written > 0 ? " (copies in {$backup})" : '') . ", " . count($moves) . " grant(s) moved.\n";
-echo "Now: sudo systemctl restart certstudy-actions-mcp\n";
+echo "Now: sudo systemctl restart maludb-os-actions-mcp\n";

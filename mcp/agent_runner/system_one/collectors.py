@@ -18,7 +18,7 @@ import httpx
 from .. import store
 from .redact import redact
 
-JOURNAL_UNITS_GLOBS = ["certstudy-*", "hr-*", "maludb-api", "apache2", "postgresql*"]
+JOURNAL_UNITS_GLOBS = ["maludb-os-*", "hr-*", "maludb-api", "apache2", "postgresql*"]
 APACHE_ERROR_LOGS = "/var/log/apache2"
 POSTGRES_LOG = "/var/log/postgresql/postgresql-17-main.log"
 PG_LEVELS = re.compile(r"\b(ERROR|FATAL|PANIC|WARNING):")

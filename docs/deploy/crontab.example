@@ -8,11 +8,11 @@
 # Agents' duties are not cron: the agent runner's scheduler fires them.
 
 # Invitation-expiry report — daily at 08:10
-10 8 * * *   php /var/www/bin/cron/invite_expiry.php         >> /var/log/certstudy-cron.log 2>&1
+10 8 * * *   php /var/www/bin/cron/invite_expiry.php         >> /var/log/maludb-os-cron.log 2>&1
 
 # Outbound-email flush — every 5 minutes
-*/5 * * * *  php /var/www/bin/cron/notification_email_flush.php >> /var/log/certstudy-cron.log 2>&1
+*/5 * * * *  php /var/www/bin/cron/notification_email_flush.php >> /var/log/maludb-os-cron.log 2>&1
 
 # Approval expiry — every 10 minutes: a request nobody decided in time expires, and the run that
 # waited on it is released (the screens sweep too; this covers the hours nobody looks)
-*/10 * * * * php /var/www/bin/cron/approvals_expire.php   >> /var/log/certstudy-cron.log 2>&1
+*/10 * * * * php /var/www/bin/cron/approvals_expire.php   >> /var/log/maludb-os-cron.log 2>&1

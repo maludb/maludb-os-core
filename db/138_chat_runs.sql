@@ -7,7 +7,7 @@
 -- application gives a conversation, and the person's own words (the run's instructions hold the
 -- rendered prompt around them), so the next turn can carry the last few in. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/138_chat_runs.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/138_chat_runs.sql
 
 BEGIN;
 

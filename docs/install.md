@@ -120,13 +120,13 @@ One database, one schema and one login role, all named for the kernel. The names
 
 ```bash
 umask 077; openssl rand -hex 24 > ~/.mem.pw; umask 022       # the memory role's password, in a file
-sudo -u postgres createdb certstudy_memory
-sudo -u postgres psql -d certstudy_memory -c "CREATE EXTENSION maludb_core CASCADE"
-sudo -u postgres psql -d certstudy_memory -c "CREATE ROLE certstudy_mem LOGIN PASSWORD '$(cat ~/.mem.pw)'"
-sudo -u postgres psql -d certstudy_memory -c "CREATE SCHEMA certstudy_mem AUTHORIZATION certstudy_mem"
-sudo -u postgres psql -d certstudy_memory -Atc "SELECT count(*) FROM maludb_core.enable_memory_schema('certstudy_mem')"
-sudo -u postgres psql -d certstudy_memory -Atc "SELECT maludb_core.grant_memory_access('certstudy_mem')"
-sudo -u postgres psql -d certstudy_memory -Atc "SELECT extversion FROM pg_extension WHERE extname='maludb_core'"   # 0.106.0+
+sudo -u postgres createdb maludb_os_memory
+sudo -u postgres psql -d maludb_os_memory -c "CREATE EXTENSION maludb_core CASCADE"
+sudo -u postgres psql -d maludb_os_memory -c "CREATE ROLE maludb_os_mem LOGIN PASSWORD '$(cat ~/.mem.pw)'"
+sudo -u postgres psql -d maludb_os_memory -c "CREATE SCHEMA maludb_os_mem AUTHORIZATION maludb_os_mem"
+sudo -u postgres psql -d maludb_os_memory -Atc "SELECT count(*) FROM maludb_core.enable_memory_schema('maludb_os_mem')"
+sudo -u postgres psql -d maludb_os_memory -Atc "SELECT maludb_core.grant_memory_access('maludb_os_mem')"
+sudo -u postgres psql -d maludb_os_memory -Atc "SELECT extversion FROM pg_extension WHERE extname='maludb_core'"   # 0.106.0+
 ```
 
 `enable_memory_schema` reports the objects it created (about 190 on 0.106.0); re-run it after every
@@ -136,7 +136,7 @@ extension upgrade. Keep `~/.mem.pw` until `config/.env` holds the password (§5)
 
 ```bash
 curl -s -X POST http://127.0.0.1:8000/v1/tokens -H 'Content-Type: application/json' \
-  -d "{\"pg_dbname\":\"certstudy_memory\",\"pg_user\":\"certstudy_mem\",\"pg_password\":\"$(cat ~/.mem.pw)\",\"label\":\"kernel\"}" \
+  -d "{\"pg_dbname\":\"maludb_os_memory\",\"pg_user\":\"maludb_os_mem\",\"pg_password\":\"$(cat ~/.mem.pw)\",\"label\":\"kernel\"}" \
   | jq -r .token > ~/.maludb.token && chmod 600 ~/.maludb.token && head -c 10 ~/.maludb.token; echo …
 curl -s http://127.0.0.1:8000/v1/whoami -H "Authorization: Bearer $(cat ~/.maludb.token)" | jq -c .
 ```
@@ -168,17 +168,17 @@ serves and on `config/.env` (mode 640, group `www-data`) — never make the secr
 ### 4.1 Create it and run every migration, in order
 
 ```bash
-sudo -u postgres createdb certstudy
+sudo -u postgres createdb maludb_os
 cd /var/www
 for f in db/*.sql; do
-  sudo -u postgres psql -v ON_ERROR_STOP=1 -q -d certstudy -f "$f" >/dev/null || { echo "FAILED at $f"; break; }
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -q -d maludb_os -f "$f" >/dev/null || { echo "FAILED at $f"; break; }
 done
 ```
 
 What to expect:
 
 - `db/000` prints one `NOTICE: maludb extension not available` — expected and harmless. The kernel's
-  database never holds MaluDB; memory lives in `certstudy_memory` behind the API.
+  database never holds MaluDB; memory lives in `maludb_os_memory` behind the API.
 - Two files share the number 107 and two the number 145; the shell's sort order (`107_calendar…` before
   `107_runner…`, `145_application…` before `145_system_one`) is the right order.
 - `db/133` is the kernel cut: it **drops** the business modules that earlier files created. On a fresh
@@ -200,11 +200,11 @@ done
 ### 4.3 Check
 
 ```bash
-sudo -u postgres psql -d certstudy -Atc "select count(*) from pg_tables where schemaname='public'"      # 90
-sudo -u postgres psql -d certstudy -Atc "select string_agg(name, ', ' order by id) from departments"       # HR, Audit, Accounting, Front Office, IT
-sudo -u postgres psql -d certstudy -Atc "select kind||' '||name from locations"                           # office Office
-sudo -u postgres psql -d certstudy -Atc "select model_key from model_registry"                            # jev:typesafe/jev-1.13
-PGPASSWORD="$(cat ~/.pw.app_rw)" psql -h 127.0.0.1 -U app_rw -d certstudy -Atc "select 1"                # 1
+sudo -u postgres psql -d maludb_os -Atc "select count(*) from pg_tables where schemaname='public'"      # 90
+sudo -u postgres psql -d maludb_os -Atc "select string_agg(name, ', ' order by id) from departments"       # HR, Audit, Accounting, Front Office, IT
+sudo -u postgres psql -d maludb_os -Atc "select kind||' '||name from locations"                           # office Office
+sudo -u postgres psql -d maludb_os -Atc "select model_key from model_registry"                            # jev:typesafe/jev-1.13
+PGPASSWORD="$(cat ~/.pw.app_rw)" psql -h 127.0.0.1 -U app_rw -d maludb_os -Atc "select 1"                # 1
 ```
 
 ---
@@ -276,7 +276,7 @@ echo "127.0.0.1 os.$DOMAIN app.$DOMAIN $DOMAIN www.$DOMAIN" | sudo tee -a /etc/h
 
 ---
 
-## 7. The React front end (`certstudy-web`, :3000)
+## 7. The React front end (`maludb-os-web`, :3000)
 
 The build user and the run user differ on purpose (the unit's header explains): build as the deploy user,
 hand `.next` to `www-data`, and reverse that before every rebuild.
@@ -284,16 +284,16 @@ hand `.next` to `www-data`, and reverse that before every rebuild.
 ```bash
 cd /var/www/web && npm ci && npm run build
 sudo chown -R www-data:www-data /var/www/web/.next
-sudo install -m 644 /var/www/docs/deploy/certstudy-web.service /etc/systemd/system/
-sudo install -d /etc/systemd/system/certstudy-web.service.d
-sed "s/subello\.com/$DOMAIN/g" /var/www/docs/deploy/certstudy-web.service.d-cutover.conf \
-  | sudo tee /etc/systemd/system/certstudy-web.service.d/cutover.conf >/dev/null
-sudo systemctl daemon-reload && sudo systemctl enable --now certstudy-web
+sudo install -m 644 /var/www/docs/deploy/maludb-os-web.service /etc/systemd/system/
+sudo install -d /etc/systemd/system/maludb-os-web.service.d
+sed "s/subello\.com/$DOMAIN/g" /var/www/docs/deploy/maludb-os-web.service.d-cutover.conf \
+  | sudo tee /etc/systemd/system/maludb-os-web.service.d/cutover.conf >/dev/null
+sudo systemctl daemon-reload && sudo systemctl enable --now maludb-os-web
 sleep 3; curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' -H "Host: app.$DOMAIN" http://127.0.0.1/     # 307 …/login  (or 200)
 curl -s -o /dev/null -w '%{http_code}\n' -H "Host: $DOMAIN" http://127.0.0.1/                                  # 200 — the landing page
 ```
 
-Rebuild later with: `sudo chown -R $USER:$USER .next && npm ci && npm run build && sudo chown -R www-data:www-data .next && sudo systemctl restart certstudy-web`.
+Rebuild later with: `sudo chown -R $USER:$USER .next && npm ci && npm run build && sudo chown -R www-data:www-data .next && sudo systemctl restart maludb-os-web`.
 
 ---
 
@@ -305,13 +305,13 @@ world-readable (the default umask does that).
 
 ```bash
 cd /var/www && python3 -m venv mcp/venv && mcp/venv/bin/pip install -q -r mcp/requirements.txt
-sudo install -m 644 docs/deploy/certstudy-records-mcp.service docs/deploy/certstudy-activity-mcp.service \
-    docs/deploy/certstudy-actions-mcp.service docs/deploy/certstudy-memory-mcp.service \
-    docs/deploy/certstudy-activity-ingest.service docs/deploy/certstudy-activity-ingest.timer /etc/systemd/system/
+sudo install -m 644 docs/deploy/maludb-os-records-mcp.service docs/deploy/maludb-os-activity-mcp.service \
+    docs/deploy/maludb-os-actions-mcp.service docs/deploy/maludb-os-memory-mcp.service \
+    docs/deploy/maludb-os-activity-ingest.service docs/deploy/maludb-os-activity-ingest.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now certstudy-records-mcp certstudy-activity-mcp certstudy-actions-mcp certstudy-memory-mcp certstudy-activity-ingest.timer
+sudo systemctl enable --now maludb-os-records-mcp maludb-os-activity-mcp maludb-os-actions-mcp maludb-os-memory-mcp maludb-os-activity-ingest.timer
 ss -ltn | grep -cE ':881[1-4] '                                   # 4
-sudo systemctl start certstudy-activity-ingest.service && journalctl -u certstudy-activity-ingest -n 2 --no-pager
+sudo systemctl start maludb-os-activity-ingest.service && journalctl -u maludb-os-activity-ingest -n 2 --no-pager
 ```
 
 The actions server loads `mcp/action_registry.json` (tracked; rebuilt from the action manifest by
@@ -369,9 +369,9 @@ Only if an agent will run on the Hermes harness: `docs/deploy/hermes-install.md`
 ### 9.5 The unit, and the proof
 
 ```bash
-sudo install -m 644 docs/deploy/certstudy-agent-runner.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now certstudy-agent-runner
-sudo systemctl restart certstudy-records-mcp certstudy-activity-mcp certstudy-actions-mcp
+sudo install -m 644 docs/deploy/maludb-os-agent-runner.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now maludb-os-agent-runner
+sudo systemctl restart maludb-os-records-mcp maludb-os-activity-mcp maludb-os-actions-mcp
 curl -s http://127.0.0.1:8815/health
 # {"ok":true,"running":[],"harnesses":["claude_agent_sdk","system_one"],"subscription":false}   (+ "hermes" if installed)
 cd /var/www/mcp/claude_conformance && python3 run_conformance.py --claude /opt/claude-agent/bin/claude   # green before any agent runs
@@ -389,7 +389,7 @@ and **off by default**; do not enable it on a new host.
 ```bash
 cd /var/www && php bin/bootstrap_organizer.php --email "$ADMIN_EMAIL" --name "$ADMIN_NAME"
 # Created super-admin #1: … ; Generated password (store it now, shown once): …
-sudo -u postgres psql -d certstudy -Atc "select id, business_role from members"       # 1|super_admin
+sudo -u postgres psql -d maludb_os -Atc "select id, business_role from members"       # 1|super_admin
 ```
 
 (The script makes a **super-admin** since 2026-10-06. Before that it created an ordinary user, which on a
@@ -403,7 +403,7 @@ A fresh registry holds only JEV. The Installer agent (and any Claude agent) need
 (`model_save`, super-admin), and that is the preferred way because it is logged. Headless, the same row:
 
 ```bash
-sudo -u postgres psql -d certstudy -c "INSERT INTO model_registry
+sudo -u postgres psql -d maludb_os -c "INSERT INTO model_registry
   (model_key, display_name, provider, provider_model_id, harness, price_input_per_mtok, price_output_per_mtok,
    price_cache_read_per_mtok, price_cache_write_per_mtok, currency, status, auth_mode)
   VALUES ('claude-fable-5-1', 'Claude Fable 5.1', 'anthropic', 'claude-fable-5-1', 'claude_agent_sdk',
@@ -426,7 +426,7 @@ name, time zone and currency at **Settings → Business** (`/settings/business`)
 ### 10.4 Cron
 
 ```bash
-sudo touch /var/log/certstudy-cron.log && sudo chown www-data:www-data /var/log/certstudy-cron.log
+sudo touch /var/log/maludb-os-cron.log && sudo chown www-data:www-data /var/log/maludb-os-cron.log
 sudo crontab -u www-data /var/www/docs/deploy/crontab.example && sudo crontab -u www-data -l | grep -c php     # 3
 ```
 
@@ -499,16 +499,16 @@ departments.
 ## 13. Proof the installation is whole
 
 ```bash
-systemctl is-active apache2 certstudy-web certstudy-records-mcp certstudy-activity-mcp certstudy-actions-mcp \
-    certstudy-memory-mcp certstudy-agent-runner maludb-api certstudy-activity-ingest.timer | sort | uniq -c   # all active
+systemctl is-active apache2 maludb-os-web maludb-os-records-mcp maludb-os-activity-mcp maludb-os-actions-mcp \
+    maludb-os-memory-mcp maludb-os-agent-runner maludb-api maludb-os-activity-ingest.timer | sort | uniq -c   # all active
 curl -s http://127.0.0.1:8080/api/v1/health | jq -c .                      # PHP
 curl -s -o /dev/null -w '%{http_code}\n' -H "Host: app.$DOMAIN" http://127.0.0.1/login      # 200 — React
 curl -s http://127.0.0.1:8815/health | jq -c .harnesses                     # the runner's harnesses
 curl -s http://127.0.0.1:8000/health                                        # MaluDB API
-sudo -u postgres psql -d certstudy -Atc "select count(*) from activity_log"                   # grows with every write
-sudo -u postgres psql -d certstudy -Atc "select last_id from activity_ingest_state"  # advances within a minute of the above
-sudo -u postgres psql -d certstudy -Atc "select display_name||' ('||business_role||')' from members order by id"
-sudo -u postgres psql -d certstudy -Atc "select app_key||' '||status from applications where app_key is not null order by id"
+sudo -u postgres psql -d maludb_os -Atc "select count(*) from activity_log"                   # grows with every write
+sudo -u postgres psql -d maludb_os -Atc "select last_id from activity_ingest_state"  # advances within a minute of the above
+sudo -u postgres psql -d maludb_os -Atc "select display_name||' ('||business_role||')' from members order by id"
+sudo -u postgres psql -d maludb_os -Atc "select app_key||' '||status from applications where app_key is not null order by id"
 ```
 
 In the browser: `https://app.$DOMAIN` signs in and shows the launcher; `https://os.$DOMAIN` opens the OS
@@ -523,8 +523,8 @@ Clean up: `shred -u ~/.pw.* ~/.mem.pw ~/.maludb.token` once every env file holds
 
 DNS and TLS for every name; provider keys and their budgets; the MaluMail sending domain; Sign in with Google
 (`GOOGLE_*`); an assistant's Telegram, Twilio or MaluMail mailbox (`bin/channel_endpoint_set.php`); the
-business's notification number for applications' texts (`bin/notify_endpoint_set.php`); backups of `certstudy`,
-`certstudy_memory` and every application database (`pg_dump -Fc`; MaluDB's data is carried by `pg_dump`
+business's notification number for applications' texts (`bin/notify_endpoint_set.php`); backups of `maludb_os`,
+`maludb_os_memory` and every application database (`pg_dump -Fc`; MaluDB's data is carried by `pg_dump`
 since extension 0.105.0); and the Claude subscription switch, which stays off.
 
 ---
@@ -536,12 +536,12 @@ since extension 0.105.0); and the Claude subscription switch, which stays off.
 | `apache-react-cutover.conf` | `/etc/apache2/sites-available/000-default.conf` | root 644 | `subello.com` → your domain |
 | `apache-mcp-proxy.conf`, `apache-canonical-urls.conf` | (fragments already inside the file above; kept for reference) | — | — |
 | `php-99-business-os.ini` | `/etc/php/8.3/apache2/conf.d/99-business-os.ini` | root 644 | — |
-| `certstudy-web.service` | `/etc/systemd/system/` | root 644 | — |
-| `certstudy-web.service.d-cutover.conf` | `/etc/systemd/system/certstudy-web.service.d/cutover.conf` | root 644 | the two hosts |
-| `certstudy-records-mcp.service`, `-activity-mcp`, `-actions-mcp`, `-memory-mcp` | `/etc/systemd/system/` | root 644 | — |
-| `certstudy-activity-ingest.service`, `.timer` | `/etc/systemd/system/` | root 644 | — |
-| `certstudy-agent-runner.service` | `/etc/systemd/system/` | root 644 | — |
-| `certstudy-channels.service` | `/etc/systemd/system/` (only once an assistant has a channel) | root 644 | — |
+| `maludb-os-web.service` | `/etc/systemd/system/` | root 644 | — |
+| `maludb-os-web.service.d-cutover.conf` | `/etc/systemd/system/maludb-os-web.service.d/cutover.conf` | root 644 | the two hosts |
+| `maludb-os-records-mcp.service`, `-activity-mcp`, `-actions-mcp`, `-memory-mcp` | `/etc/systemd/system/` | root 644 | — |
+| `maludb-os-activity-ingest.service`, `.timer` | `/etc/systemd/system/` | root 644 | — |
+| `maludb-os-agent-runner.service` | `/etc/systemd/system/` | root 644 | — |
+| `maludb-os-channels.service` | `/etc/systemd/system/` (only once an assistant has a channel) | root 644 | — |
 | `runner.env.example` | `/etc/business-os/runner.env` | root:bos-runner 640 | every value |
 | `bos-agent-exec` | `/usr/local/sbin/bos-agent-exec` | root 755 | — |
 | `bos-runner.sudoers` | `/etc/sudoers.d/bos-runner` | root 440 | — |
@@ -555,7 +555,7 @@ since extension 0.105.0); and the Claude subscription switch, which stays off.
 |---|---|
 | 80 | Apache: `os.`, `app.`, the bare name (TLS terminated in front) |
 | 127.0.0.1:8080 | Apache: the PHP JSON API (Next.js and the actions server only) |
-| 3000 | Next.js (`certstudy-web`) |
+| 3000 | Next.js (`maludb-os-web`) |
 | 8811–8814 | records, activity, actions, memory MCP servers |
 | 8815 / 8816 | agent runner API / ledger proxy |
 | 8000 | MaluDB API |

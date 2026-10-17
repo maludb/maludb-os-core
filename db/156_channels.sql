@@ -9,7 +9,7 @@
 -- on the channel of their latest message on that thread, else their preferred channel, else it waits in
 -- the OS; delivered_at / delivery_error record what happened. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/156_channels.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/156_channels.sql
 
 BEGIN;
 

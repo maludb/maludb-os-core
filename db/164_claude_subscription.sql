@@ -6,7 +6,7 @@
 -- price the API WOULD have charged in notional_cost, so every dollar total and statement that sums `cost` is right
 -- without a change; budgets count both (owner, 2026-09-29). Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/164_claude_subscription.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/164_claude_subscription.sql
 
 BEGIN;
 

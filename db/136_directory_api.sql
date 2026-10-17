@@ -11,7 +11,7 @@
 --   * activity_log.source 'application' — a directory write is a person's act (X-Acting-Member),
 --     made from inside an application.
 -- Additive. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/136_directory_api.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/136_directory_api.sql
 
 BEGIN;
 

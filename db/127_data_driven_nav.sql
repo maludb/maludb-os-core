@@ -20,7 +20,7 @@
 --
 -- Seeded with today's catalog exactly, so the menu is unchanged by this migration.
 -- Additive. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/127_data_driven_nav.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/127_data_driven_nav.sql
 
 BEGIN;
 

@@ -1,4 +1,4 @@
-"""certstudy_actions_mcp — the actions/navigation MCP server (localhost-only).
+"""maludb_os_actions_mcp — the actions/navigation MCP server (localhost-only).
 
 Unlike the read servers, this one acts AS a member: the assistant service passes a
 short-lived signed action token (Authorization: Bearer <action_token>) minted by the PHP
@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 import db
 
 APP_BASE = "http://127.0.0.1:8080"     # the PHP JSON API — localhost-only since the cut-over (Apache :8080)
-mcp = FastMCP("certstudy_actions_mcp")
+mcp = FastMCP("maludb_os_actions_mcp")
 
 # Per-request context set by the auth middleware.
 action_token: contextvars.ContextVar[str] = contextvars.ContextVar("action_token", default="")

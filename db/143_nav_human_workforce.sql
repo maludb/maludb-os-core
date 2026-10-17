@@ -3,7 +3,7 @@
 -- filtered to people — was reachable only as part of Agent Workforce; it gets its own entry, and Agent
 -- Workforce keeps /skills. Admins only (inviting and maintaining people is theirs). Data only.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/143_nav_human_workforce.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/143_nav_human_workforce.sql
 BEGIN;
 INSERT INTO nav_items (item_key, application_id, group_id, sort_order, label, icon, url, audience, active_patterns, phase)
 SELECT 'human_workforce', 22, i.group_id, i.sort_order + 5, 'Human Workforce', 'feather-user', '/team?kind=human', 'admin', '{/team}', 1

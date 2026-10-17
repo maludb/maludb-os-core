@@ -11,7 +11,7 @@
 --                         application's expert and every agent that may use the application.
 --
 -- Additive. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/130_application_inventory_expertise.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/130_application_inventory_expertise.sql
 
 BEGIN;
 

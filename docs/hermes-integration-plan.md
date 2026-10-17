@@ -93,7 +93,7 @@ ride in it: **`maludb-hermes`** (memory provider + skills sync — a MaluDB prod
 Upgrade = bump pin → rerun H0 conformance suite → run evals.
 
 ### 2. Hermes is the first harness behind the agent-runner interface
-New service **`mcp/agent_runner/`** (systemd `certstudy-agent-runner`, localhost, **own unix user,
+New service **`mcp/agent_runner/`** (systemd `maludb-os-agent-runner`, localhost, **own unix user,
 not in `www-data`**): harness ABC (`prepare`/`run`/`cancel`), registry keyed on
 `model_registry.harness`, `hermes` the first implementation. Claude Agent SDK / OpenAI Agents SDK
 remain future harnesses on the same interface. `'hermes'` joins the harness CHECK (db/097),
@@ -196,7 +196,7 @@ New screens are React-native, after cut-over.
 
 Conventions: extension work = `sql/extension/maludb_core--0.105.3--0.106.0.sql` + a regress test in
 `Makefile` `REGRESS`, new tables registered for `pg_extension_config_dump`, FK indexes, facades
-added to an `_enable_memory_schema_*_facade` builder (**`enable_memory_schema('certstudy_mem')` must
+added to an `_enable_memory_schema_*_facade` builder (**`enable_memory_schema('maludb_os_mem')` must
 be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py` each.
 
 **Release MA — API only, no extension change (unblocks H4/H5):**
@@ -291,7 +291,7 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
 6. Skills: a skill authored by A is ingested `proposed`, shown as a diff, approved, and appears in
    B's read-only dir next run; the run snapshot and MaluDB load events record the bundle hash.
 7. MaluDB: regress suite (incl. `dump_registration`, `fk_index_coverage`) and API `pytest` green;
-   `enable_memory_schema` re-run on `certstudy_mem`; activity ingest still advancing its checkpoint.
+   `enable_memory_schema` re-run on `maludb_os_mem`; activity ingest still advancing its checkpoint.
 8. Phase 5 exit criteria: a scheduled duty completes end to end within budget.
 
 ## Stage state
@@ -308,7 +308,7 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
 - **H1 — proposed 2026-09-19, waiting at the owner's checkpoint.** `docs/build-specs/agent-runtime-hermes.md`
   is the schema + MCP tool surface + action manifest for the runtime, together. The migrations are
   drafts in `db/drafts/` (`097_agent_runtime.sql`, `098_agent_skills.sql`) — both run clean against
-  `certstudy` inside a rolled-back transaction; **nothing is applied**. The Hermes-first decision is
+  `maludb_os` inside a rolled-back transaction; **nothing is applied**. The Hermes-first decision is
   synced into all five copies (requirements ×3, build plan ×2). The manifest and tool-surface
   documents are **not** edited yet: their new rows are in the spec and are copied in on approval,
   because `bin/build_action_registry.php` reads the manifest and the actions server loads its output.
@@ -322,7 +322,7 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
   are corrected in the table above: M4a is a two-step recall, not a re-route; M-fix needs the
   extension. One `ruff` error (`graph.py:730`, E741) is already on `main` and was left alone.
   Remaining MA: M1 (password at rest, token route params, CI, version), M2, M4a, M5, M6, M7, M8a.
-- **H1 approved by the owner 2026-09-19; H2 built the same day.** `certstudy-agent-runner` is live
+- **H1 approved by the owner 2026-09-19; H2 built the same day.** `maludb-os-agent-runner` is live
   (runner API :8815, ledger proxy :8816, user `bos-runner`, role `app_runner`); Hermes is pinned at
   `/opt/hermes`; each agent process runs sandboxed as `bos-agent` with no network beyond localhost.
   **The first hired agent has run**: Sasha (member 44), on Claude through the Hermes harness, called a
@@ -379,7 +379,7 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
   - Every new docstring and the README say it plainly: **namespaces and principal refs are labels, not
     access control.** Enforcement inside a tenant is MB (M3).
   - One thing to check in H4: the scratch tenant embeds with the built-in `maludb-local-dev` embedder
-    (similarities near zero). `certstudy_memory` needs a real `embed` model configured or recall will
+    (similarities near zero). `maludb_os_memory` needs a real `embed` model configured or recall will
     rank poorly.
   **To use these routes H4 needs them live:** push the branch, merge, and restart `maludb-api.service`
   — the owner's call, since it is the owner's repository and the service the activity ingest depends on.
@@ -395,12 +395,12 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
   the restart. The repo's `origin` was switched from SSH to HTTPS — this machine's key is not on GitHub,
   so SSH could never work here, and `gh` now supplies the HTTPS credentials
   (undo: `git remote set-url origin git@github.com:maludb/maludb-python-api-server.git`).
-  **H4 (memory) is unblocked.** First thing H4 must check: whether `certstudy_memory` has a real
+  **H4 (memory) is unblocked.** First thing H4 must check: whether `maludb_os_memory` has a real
   `embed` model configured — on the built-in `maludb-local-dev` embedder recall ranks poorly.
 - **Cut-over repair, then H4 — done 2026-09-19.** The React cut-over moved PHP to `127.0.0.1:8080`;
   the approval replay and the runner's completion callback still aimed at port 80 and were silently
   broken. Both fixed and re-proven with a real run (`5937afc`).
-  **H4** (`docs/build-specs/agent-memory.md`): `certstudy-memory-mcp` (:8814) serves `recall`,
+  **H4** (`docs/build-specs/agent-memory.md`): `maludb-os-memory-mcp` (:8814) serves `recall`,
   `core_memory`, `session_search`, resolving each caller's scope (self, its departments, org) from the
   verified token; `memory_remember` and `core_memory_set` are PHP actions; an agent's shared write and
   an agent changing its own core memory both pause for a person. The runner puts core memory in the
@@ -408,7 +408,7 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
   the in-process Hermes `MemoryProvider` (M10) is deferred — the runner does the same at the two moments
   it already owns, with no credential in the sandbox and no coupling to a Hermes interface that moves
   weekly; it comes back with multi-turn conversations. **Owner's decision outstanding:**
-  `certstudy_memory` has no embedding model, so ranking within a result set is arbitrary (isolation is
+  `maludb_os_memory` has no embedding model, so ranking within a result set is arbitrary (isolation is
   exact and unaffected). **Next: H5 skills**, then H6 duties + delegation, and H7 screens, which the
   cut-over has unblocked (the React slice template is the way in now).
 - **H5 — done 2026-09-19** (`docs/build-specs/agent-skills.md`), built beside the stub-modules run
@@ -459,7 +459,7 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
   fixed** (tombstones on every search path — the C scan included — `maludb_forget_document`, chunks go
   with their document), skill `review_state` + principal grants + load events, presence facades,
   `maludb_memory_ingest_extraction(…, p_namespace)`. 104/104 regress tests; upgrading a copy of
-  `certstudy_memory` took 0.2 s and Sasha then saw exactly her two documents.
+  `maludb_os_memory` took 0.2 s and Sasha then saw exactly her two documents.
   `maludb-python-api-server` branch `feat/principal-scoping-mb` (6404e4a, rebased on PR #15, worktree
   `/home/maludb/maludb-api-mb`): `X-MaluDB-Principal/-Scopes/-Readonly`, `DELETE /v1/documents/{id}`
   forgets, principal/scope/review/load/presence routes; 15 e2e tests on a 0.106.0 tenant, and the
@@ -473,8 +473,8 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
   a worker draining the queue (3,042 cards waiting, none embedded: the owner's go, it spends on OpenAI).
   Tested on a private PostgreSQL copy (`/home/maludb/maludb-mb-scratch`, port 5499) so the live
   cluster's shared library and default version were never touched.
-  **Next, in order:** owner reviews → push + PRs → `pg_dump -Fc certstudy_memory` → `make install` +
-  `ALTER EXTENSION … UPDATE` in `maludb`, `maludb_ma_scratch`, `certstudy_memory` → re-run
+  **Next, in order:** owner reviews → push + PRs → `pg_dump -Fc maludb_os_memory` → `make install` +
+  `ALTER EXTENSION … UPDATE` in `maludb`, `maludb_ma_scratch`, `maludb_os_memory` → re-run
   `enable_memory_schema` → deploy the API → delete the four test chunks left on this server
   (`maludb_forget_chunk`) → platform stage: sync principals + grants from `members` /
   `department_members`, pass the principal on every MaluDB call, scope run transcripts, and a forget action.
@@ -486,15 +486,15 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
   **501** rather than being served unscoped, the principal routes answer 501 `engine_too_old`, `DELETE
   /v1/documents/{id}` falls back to the old path with PR #15's search filter. Live afterwards: `/v1/whoami` →
   `engine_enforces_principals: false`, activity ingest shipped 7/7, recall answers.
-  **Still to do, in order:** owner approves + merges core #37 → `pg_dump -Fc` of `certstudy_memory`,
+  **Still to do, in order:** owner approves + merges core #37 → `pg_dump -Fc` of `maludb_os_memory`,
   `maludb_ma_scratch`, `maludb` → `git pull` + `make` + `sudo make install` in `/home/maludb/maludb-core` →
   `ALTER EXTENSION maludb_core UPDATE TO '0.106.0'` in those three databases → `enable_memory_schema` for
-  `certstudy_mem`, `ma_scratch`, `app` → `/v1/whoami` must say `engine_enforces_principals: true` → forget the
+  `maludb_os_mem`, `ma_scratch`, `app` → `/v1/whoami` must say `engine_enforces_principals: true` → forget the
   four leftover test chunks → the platform stage.
 - **MB — deployed 2026-09-19 23:55 UTC.** maludb/maludb-core#37 merged (71cf34d) and `maludb_core` 0.106.0 is
-  live in all three databases on this server: `maludb_ma_scratch` (0.5 s), `maludb` (0.5 s), `certstudy_memory`
-  (**0.25 s**), each followed by `enable_memory_schema` (`ma_scratch`, `app`, `certstudy_mem` → 194 objects).
-  Every count in `certstudy_memory` is identical before and after (3,987 episodes, 22 documents, 28 sources,
+  live in all three databases on this server: `maludb_ma_scratch` (0.5 s), `maludb` (0.5 s), `maludb_os_memory`
+  (**0.25 s**), each followed by `enable_memory_schema` (`ma_scratch`, `app`, `maludb_os_mem` → 194 objects).
+  Every count in `maludb_os_memory` is identical before and after (3,987 episodes, 22 documents, 28 sources,
   8 chunks, 8 statements, 13 chat sessions, 79 messages, 3 memories, 5 skills); the backfill scoped the four
   namespaced documents (`agent:44`, `dept:3`, `dept:4`, `org`), 18 stay `default`. Live afterwards:
   `/v1/whoami` → `engine_enforces_principals: true`; a request naming an unregistered principal reads **nothing**;
@@ -503,7 +503,7 @@ be re-run after upgrade**). API work = one router + one `tests/test_<domain>.py`
   `DELETE /v1/memory/chunks/{id}`; `vector_count` is true in every compartment. **The "deleted memory stays
   recallable" defect is closed** — a forget action may now be built.
   Backups (mode 600): `/home/maludb/env-backups/maludb-0.106.0-20260919T234618Z/` — the three databases
-  (`certstudy_memory` re-dumped at 23:54, just before its upgrade) and the 0.105.3 `maludb_core.so` + control.
+  (`maludb_os_memory` re-dumped at 23:54, just before its upgrade) and the 0.105.3 `maludb_core.so` + control.
   There is no downgrade script: going back means restoring those dumps.
   *How it was installed:* built unprivileged in `/home/maludb/maludb-core-mb` against the system `pg_config`
   (`/home/maludb/maludb-core` has root-owned build files from earlier `sudo make` runs and cannot be built

@@ -55,7 +55,7 @@ The Claude Agent SDK is the Claude Code CLI plus language wrappers. Using the **
 rather than the Python wrapper is deliberate, and it is the same choice H0 made for Hermes:
 
 - The agent process stays a **subprocess we can sandbox**. The Python SDK would run the loop inside
-  `certstudy-agent-runner`, which holds the provider API keys and has full network. A subprocess runs
+  `maludb-os-agent-runner`, which holds the provider API keys and has full network. A subprocess runs
   as `bos-agent` under `systemd-run` with `IPAddressDeny=any` + `IPAddressAllow=localhost`, exactly as
   Hermes does, and cannot reach a provider even if it tried.
 - `--print --output-format stream-json` emits tool-call events natively, so `agent_run_events` (db/122)
@@ -263,7 +263,7 @@ The suite is a script plus a README recording what it found, and it must be gree
    nothing — the approvals path is harness-independent, and this is the first proof of it through a
    second harness. *(It is also half of phase 5's exit criterion.)*
 6. Hiring onto `openai_agents_sdk` is refused by name.
-7. `systemctl restart certstudy-agent-runner` and Jack's morning duty still runs on Hermes.
+7. `systemctl restart maludb-os-agent-runner` and Jack's morning duty still runs on Hermes.
 
 ## What the acceptance produced (2026-09-20)
 

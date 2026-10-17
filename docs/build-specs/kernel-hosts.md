@@ -15,7 +15,7 @@ One codebase, two faces, decided by the name the browser used:
 | Neither | any other name still reaching the React app | — | Sent on to `app.<domain>`, path and query intact (308) |
 
 Both names are configuration: `OS_HOST` and `APP_HOST` in `config/.env` (PHP) and in the
-`certstudy-web` systemd drop-in (React). Both empty = one face, the operating system, as before
+`maludb-os-web` systemd drop-in (React). Both empty = one face, the operating system, as before
 the split; `localhost` and `127.0.0.1` are always the operating system (health checks, the deploy
 script). The DNS records and the proxy entries for the two names are the owner's.
 

@@ -29,7 +29,7 @@
     - Agents additionally need a live `agent_tool_grants` row for the tool.
     - The view still decides the rows, so a gate only trims the list.
 
-## Records server — `certstudy_records_mcp` (role `app_records_ro`)
+## Records server — `maludb_os_records_mcp` (role `app_records_ro`)
 
 ### Team & access
 
@@ -198,7 +198,7 @@
 | `model_catalog` | Which models are available, their harness and prices | PL6 | `mcp_model_registry` | `status?` | insider |
 | `agent_runs` | What an agent is doing or did: runs by status, trigger, duty and cost; what is running right now across the organisation; the runs a delegation spawned | H4, DB7, PL7 | `mcp_agent_runs` | `agent_member_id?`, `status?`, `period?`, `parent_run_id?` | hr or agent's manager; agents: own runs |
 
-### Shared memory & skills *(approved 2026-09-19 — a third read server, `certstudy_memory_mcp`, port 8814; built in H4/H5)*
+### Shared memory & skills *(approved 2026-09-19 — a third read server, `maludb_os_memory_mcp`, port 8814; built in H4/H5)*
 
 The Memory server holds the tenant's MaluDB token and enforces scope: a caller recalls its own memory, its departments' and the organisation's — never another member's. Writes are manifest actions, not tools.
 
@@ -309,7 +309,7 @@ The Memory server holds the tenant's MaluDB token and enforces scope: a caller r
 
 `records_search` keeps the existing guard: a single SELECT, parsed and rejected otherwise, with `statement_timeout` and a row cap. Its description embeds the view catalog, generated from `information_schema` at server start so it never drifts from the migrations.
 
-## Activity server — `certstudy_activity_mcp` (role `app_activity_ro`)
+## Activity server — `maludb_os_activity_mcp` (role `app_activity_ro`)
 
 | Tool | Call it when | Answers | Reads | Key params | Gate |
 | --- | --- | --- | --- | --- | --- |
@@ -351,7 +351,7 @@ One tool can't join the two memories, because each server runs as its own role. 
 
 ## Decisions
 
-1. **Extend the two existing servers** *(approved 2026-09-17)*. The business tools join `certstudy_records_mcp` and `certstudy_activity_mcp`, so endpoints, tokens and the Apache proxy stay as they are. The cert-study tools stay until those modules are retired. `record_history` keeps its name but moves to `mcp_activity_entity_history`, a superset of today's organizer-only view.
+1. **Extend the two existing servers** *(approved 2026-09-17)*. The business tools join `maludb_os_records_mcp` and `maludb_os_activity_mcp`, so endpoints, tokens and the Apache proxy stay as they are. The cert-study tools stay until those modules are retired. `record_history` keeps its name but moves to `mcp_activity_entity_history`, a superset of today's organizer-only view.
 2. **Each caller's tool list is filtered** *(approved 2026-09-17)*. `list_tools` shows a tool only when the caller passes its gate (module grant, role, and for agents an `agent_tool_grants` row). A staff member without the sales module never sees the ten sales tools, and an agent sees only the tools it was hired with. This needs a small change to `server_common.py`: gate metadata per tool, checked in `list_tools` and again on call.
 3. **Consolidated tools with filters.** 135 tools answer 292 questions. Each tool's description names its questions, so the questions doc doubles as the eval set for the tools.
 4. *(Approved 2026-09-17.)* **Aggregates are computed in tool SQL over the views,** not in extra database views. The views are the security boundary, and aggregating over them can't widen access. The only new view is `mcp_activity_unapproved_actions` (052), because that audit must join activity to policies within one role.

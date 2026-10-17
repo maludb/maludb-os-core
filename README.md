@@ -62,7 +62,7 @@ Three names per company, one kernel:
  browser ──► Apache :80 ──► Next.js/React (web/, :3000)
                  │                 │  server components + actions only
                  │                 ▼
-                 │          PHP JSON API (html/, 127.0.0.1:8080)  ──►  PostgreSQL 17 (certstudy)
+                 │          PHP JSON API (html/, 127.0.0.1:8080)  ──►  PostgreSQL 17 (maludb_os)
                  │                 ▲
                  └─ /mcp/* ────────┼──►  MCP servers (Python, mcp/)
                                    │        records · activity · actions · memory
@@ -116,11 +116,11 @@ written so a person or a Claude Code session with `sudo` can execute it. In outl
 
 1. **The host** — MaluDB core's bootstrap first (it brings PostgreSQL 17 from PGDG, pgvector, pgaudit and builds the
    `maludb_core` extension), then Apache + PHP 8.3 (`libapache2-mod-php8.3`, `php8.3-pgsql` …), Composer, Node 24.
-2. **MaluDB** — the API service (:8000) and the kernel's own memory database `certstudy_memory` (schema and role
-   `certstudy_mem`, `enable_memory_schema`, `grant_memory_access`), then a token from `POST /v1/tokens`.
+2. **MaluDB** — the API service (:8000) and the kernel's own memory database `maludb_os_memory` (schema and role
+   `maludb_os_mem`, `enable_memory_schema`, `grant_memory_access`), then a token from `POST /v1/tokens`.
 3. **The code** — clone to `/var/www`, `composer install --no-dev`, `storage/` for `www-data`, `config/.env` (mode 640,
    group `www-data`) from `config/.env.example`, which documents **every** key the code reads.
-4. **The database** — `createdb certstudy`, then `db/*.sql` in order as `postgres` (all 154 apply clean on an empty
+4. **The database** — `createdb maludb_os`, then `db/*.sql` in order as `postgres` (all 154 apply clean on an empty
    database); passwords for `app_rw`, `app_records_ro`, `app_activity_ro`, `app_runner`.
 5. **Apache** — `docs/deploy/apache-react-cutover.conf` with your domain, `Listen 127.0.0.1:8080`, the PHP ini.
 6. **The front end** — `npm ci && npm run build`, hand `.next` to `www-data`, the unit and its host drop-in.
@@ -169,7 +169,7 @@ edition of the fresh-host runbook, which it calls section by section. The instal
    MaluDB schema, confirms them with you (never printing the password), and checks the schema is memory-enabled.
 4. **Moves `/var/www` to `/var/www-previous-<date>`** (and copies the Apache default site aside) after telling you,
    clones the kernel there and follows `docs/install.md` §3–§13 with the tenant's memory database in place of the
-   runbook's `certstudy_memory`.
+   runbook's `maludb_os_memory`.
 5. **Installs the four default applications** and closes with the DNS table, where the previous application went,
    the sign-in address, and what was left for you to set.
 
@@ -184,14 +184,14 @@ edition of the fresh-host runbook, which it calls section by section. The instal
 
 | systemd unit | Port | Purpose |
 |---|---|---|
-| `certstudy-web` | 3000 | Next.js front end |
-| `certstudy-records-mcp` | 8811 | record-memory MCP (PostgreSQL) |
-| `certstudy-activity-mcp` | 8812 | activity-memory MCP (MaluDB) |
-| `certstudy-actions-mcp` | 8813 | action MCP: state-changing tools, approval hook in front |
-| `certstudy-memory-mcp` | 8814 | agent memory MCP |
-| `certstudy-agent-runner` | 8815/8816 | agent runner and ledger proxy |
-| `certstudy-channels` | — | Telegram / SMS / email channel worker |
-| `certstudy-activity-ingest.timer` | — | ships `activity_log` to MaluDB every minute |
+| `maludb-os-web` | 3000 | Next.js front end |
+| `maludb-os-records-mcp` | 8811 | record-memory MCP (PostgreSQL) |
+| `maludb-os-activity-mcp` | 8812 | activity-memory MCP (MaluDB) |
+| `maludb-os-actions-mcp` | 8813 | action MCP: state-changing tools, approval hook in front |
+| `maludb-os-memory-mcp` | 8814 | agent memory MCP |
+| `maludb-os-agent-runner` | 8815/8816 | agent runner and ledger proxy |
+| `maludb-os-channels` | — | Telegram / SMS / email channel worker |
+| `maludb-os-activity-ingest.timer` | — | ships `activity_log` to MaluDB every minute |
 
 Cron (`docs/deploy/crontab.example`): invitation-expiry report, outbound-email flush, approval expiry. Agents' scheduled duties
 are fired by the runner's scheduler, not by cron.

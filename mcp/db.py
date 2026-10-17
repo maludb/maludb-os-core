@@ -72,7 +72,7 @@ async def make_pool(user: str, password: str) -> asyncpg.Pool:
     return await asyncpg.create_pool(
         host=ENV.get("DB_HOST", "127.0.0.1"),
         port=int(ENV.get("DB_PORT", "5432")),
-        database=ENV.get("DB_NAME", "certstudy"),
+        database=ENV.get("DB_NAME", "maludb_os"),
         user=user,
         password=password,
         min_size=1,

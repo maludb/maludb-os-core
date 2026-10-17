@@ -27,7 +27,7 @@ async def pool() -> asyncpg.Pool:
     if _pool is None:
         _pool = await asyncpg.create_pool(
             host=config.get("RUNNER_DB_HOST", "127.0.0.1"), port=int(config.get("RUNNER_DB_PORT", "5432")),
-            database=config.get("RUNNER_DB_NAME", "certstudy"), user=config.require("RUNNER_DB_USER"),
+            database=config.get("RUNNER_DB_NAME", "maludb_os"), user=config.require("RUNNER_DB_USER"),
             password=config.require("RUNNER_DB_PASSWORD"), min_size=1, max_size=6)
     return _pool
 

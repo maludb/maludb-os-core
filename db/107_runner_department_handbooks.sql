@@ -16,7 +16,7 @@
 -- should reach that department's agents without a second step.
 --
 -- Additive only. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/107_runner_department_handbooks.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/107_runner_department_handbooks.sql
 
 BEGIN;
 

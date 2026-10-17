@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 import db
 from maludb_client import MaluDB, MaluDBError
 
-mcp = FastMCP("certstudy_memory_mcp")
+mcp = FastMCP("maludb_os_memory_mcp")
 RO = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 
 

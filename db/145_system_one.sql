@@ -6,7 +6,7 @@
 -- The runner (app_runner) reads no business records (db/097): what the playbooks need is handed over by
 -- narrow SECURITY DEFINER functions here, the precedent of run_changed_anything() (db/125). Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/145_system_one.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/145_system_one.sql
 
 BEGIN;
 

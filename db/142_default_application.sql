@@ -7,7 +7,7 @@
 -- them (app_can_admin_member). Only an application — and scope — the person holds may be named;
 -- the default is advice to the landing page, never a grant. Additive.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/142_default_application.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/142_default_application.sql
 
 BEGIN;
 ALTER TABLE members ADD COLUMN default_application_id bigint REFERENCES applications(id) ON DELETE SET NULL;

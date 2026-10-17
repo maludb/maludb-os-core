@@ -21,7 +21,7 @@
 -- While nothing is disabled both functions answer exactly as before.
 --
 -- Additive. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/129_disabled_modules_close.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/129_disabled_modules_close.sql
 
 BEGIN;
 

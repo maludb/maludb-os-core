@@ -8,7 +8,7 @@ Schema: db/057 (`mailboxes`, `mail_threads`, `mail_messages`, `mail_attachments`
 `mailbox_stats`, `mailbox_rules`.
 
 ## Mail in (owner's decision 6: IMAP polling)
-- `mcp/inbox_poll.py`, run by the systemd timer `certstudy-inbox-poll.timer` every 2 minutes as
+- `mcp/inbox_poll.py`, run by the systemd timer `maludb-os-inbox-poll.timer` every 2 minutes as
   `www-data` (units in `docs/deploy/`), single-flight under an advisory lock. For each active
   mailbox with `inbound_kind = 'imap'`, a host and a credential, it opens IMAP over TLS (993),
   reads the messages of the last 3 days in `INBOX` **without marking them read** (`BODY.PEEK[]`),

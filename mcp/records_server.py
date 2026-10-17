@@ -1,4 +1,4 @@
-"""certstudy_records_mcp — record-memory MCP server (PostgreSQL, read-only).
+"""maludb_os_records_mcp — record-memory MCP server (PostgreSQL, read-only).
 
 Every tool reads the mcp_* views, which embed the §3.2 visibility rules keyed on the
 caller's member context. Read-only by construction: the role can touch nothing else.
@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 import db
 
 RO = {"readOnlyHint": True, "openWorldHint": False}
-mcp = FastMCP("certstudy_records_mcp")
+mcp = FastMCP("maludb_os_records_mcp")
 
 
 async def _pool():

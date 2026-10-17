@@ -33,7 +33,7 @@ and goes through the checkpoint gate on its own.
    carries the title, the summary and the time, and a trigger marks that subject dirty. M4b as
    the plan wrote it ("add an episode card renderer") would embed everything twice. What is
    actually missing is (a) scope on the way out of `semantic_search`, and (b) on this server
-   nothing drains the queue: `certstudy_memory` has 3,042 dirty rows and 0 object embeddings.
+   nothing drains the queue: `maludb_os_memory` has 3,042 dirty rows and 0 object embeddings.
    (b) is operations, not extension work — see "Not in this release".
 6. **Skills**: `enabled` is the only gate; `malu$skill_access` grants to a *Postgres role*; nothing
    records a load. `_register_agent_skill_for_schema` already takes `p_enabled` — the window the
@@ -169,7 +169,7 @@ passes the namespace and drops the `namespace_applied: false` warning when the e
 
 **State 2026-09-19 23:55 UTC: deployed.** Both PRs are merged (maludb/maludb-core#37 → 71cf34d,
 maludb/maludb-python-api-server#16 → f8f1c94). API 0.3.0 went live at 23:01 against the old engine; the
-extension was installed and all three databases on this server upgraded at 23:55, `certstudy_memory` in 0.25 s
+extension was installed and all three databases on this server upgraded at 23:55, `maludb_os_memory` in 0.25 s
 with every row count unchanged. The as-deployed record is at the foot of `docs/hermes-integration-plan.md`.
 Branches (now merged):
 `maludb-core` `phase-mb/principal-scoping` (9c3b044, worktree `/home/maludb/maludb-core-mb`) and
@@ -182,11 +182,11 @@ Branches (now merged):
 | 3 | `vector_forget`: one tombstoned chunk is gone from `exact` (the C scan), `exact_parallel` and `local_ann`. `maludb_forget_document` → `{"chunks": 1, "statements": 1, "source_package": "deleted"}`, `vector_count` true, ANN index marked stale; a held source refuses; the *old* way of deleting a document leaves no orphan chunk. |
 | 4 | `skill_review_load`: Sasha's revision is `enabled` **and** resolves for nobody, herself and the tenant included; v1 stays live; she cannot approve it through the function, through the view, or by someone saying her name; approved and reserved for her, Seamus still resolves only v1 and cannot record a load of it; loads carry name, version, hash, principal and run, and survive the skill's deletion. |
 | 5 | `pool_presence_facade`: join / heartbeat / cursor / leave by pool name; the roster returns cursor and TTL; Sasha is present as `agent:44` though she claimed to be `member:1`; for Seamus the pool does not exist. |
-| 6 | Fresh install and the 0.105.3 → 0.106.0 path both pass. On a copy of **`certstudy_memory`** (3,090 episodes, 19 documents): upgrade **0.2 s**, facades keep answering before the re-run, `enable_memory_schema` 0.5 s (194 objects); the backfill scoped the three namespaced documents (`agent:44`, `dept:3`, `dept:4`); bound as `agent:44` with a `dept:3` grant the real tenant role saw exactly 2 of 19 documents and 0 of 3,090 episodes, the episode scan taking 8 ms. The copy was dropped afterwards. |
+| 6 | Fresh install and the 0.105.3 → 0.106.0 path both pass. On a copy of **`maludb_os_memory`** (3,090 episodes, 19 documents): upgrade **0.2 s**, facades keep answering before the re-run, `enable_memory_schema` 0.5 s (194 objects); the backfill scoped the three namespaced documents (`agent:44`, `dept:3`, `dept:4`); bound as `agent:44` with a `dept:3` grant the real tenant role saw exactly 2 of 19 documents and 0 of 3,090 episodes, the episode scan taking 8 ms. The copy was dropped afterwards. |
 | API | 40 unit + 15 e2e tests through the real app against a 0.106.0 tenant: 403 on a scope not held, 404 on a document out of scope, read ≠ write, read-only, a principal administers nobody, a forgotten document is not recalled. The MA e2e suite passes on 0.106.0 from this branch **and from unchanged `main`** — so the extension can be deployed before the API. |
 
 **How it was tested without touching the live cluster.** `make install` overwrites the cluster-wide
-shared library and the default extension version, and this host's cluster carries `certstudy_memory`.
+shared library and the default extension version, and this host's cluster carries `maludb_os_memory`.
 So: a relocated copy of the PostgreSQL 17 installation under `/home/maludb/maludb-mb-scratch/pg`
 (PostgreSQL finds its share and lib directories relative to its own binary), its own cluster on port
 5499 with a socket only, and `PG_CONFIG` pointed at the copy. Nothing was installed system-wide.
@@ -231,8 +231,8 @@ was known, so "remember this in dept:3" landed in `agent:44`; hence the adopt ru
   cents, but it is spend and an outward call): the owner's go, then the API's
   `/v1/memory/embeddings/run` on a timer. Until then `activity_recall` for ordinary users stays shut.
 - **M4c** compartment-free search; **M2** delegated tokens (API); pg_password at rest.
-- **Deploying 0.106.0 to `certstudy_memory`** — `ALTER EXTENSION UPDATE` has no downgrade path; it
-  waits for the owner, after the PR is reviewed. Backup first (`pg_dump -Fc certstudy_memory`).
+- **Deploying 0.106.0 to `maludb_os_memory`** — `ALTER EXTENSION UPDATE` has no downgrade path; it
+  waits for the owner, after the PR is reviewed. Backup first (`pg_dump -Fc maludb_os_memory`).
 - The platform side: syncing principals + grants from `members` / `department_members`, passing
   the principal on every MaluDB call, and a forget action. Separate spec, checkpoint gate.
 

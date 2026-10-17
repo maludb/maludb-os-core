@@ -19,7 +19,7 @@ function db(): PDO
         'pgsql:host=%s;port=%s;dbname=%s',
         env('DB_HOST', '127.0.0.1'),
         env('DB_PORT', '5432'),
-        env('DB_NAME', 'certstudy')
+        env('DB_NAME', 'maludb_os')
     );
 
     $pdo = new PDO($dsn, env('DB_USER', 'app_rw'), (string) env('DB_PASSWORD', ''), [

@@ -33,7 +33,7 @@ GET  {OS_INTERNAL_URL}/api/v1/notify/sms.php?id=91 → {"notification": {"id", "
 - **Opting out:** a member turns application texts off on `/settings/channels` (per application); Twilio's answer
   21610 (the carrier's STOP) marks the identity opted out too.
 - **Delivery:** queued in `application_notifications`, sent by the channels worker that already delivers the
-  assistants' messages (`certstudy-channels`, `channel_deliver_pending()`), five attempts; `sent_at` / `error` kept.
+  assistants' messages (`maludb-os-channels`, `channel_deliver_pending()`), five attempts; `sent_at` / `error` kept.
 - **Records:** `application.notify` in the activity log (the application, the member, the reference, never the text);
   a super-admin sees the queue on the application's page later (UI owed; MCP tool `application_notifications`).
 

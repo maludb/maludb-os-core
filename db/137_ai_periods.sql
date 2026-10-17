@@ -16,7 +16,7 @@
 -- The view mcp_ai_usage_postings is recreated (a renamed column cannot be replaced in place);
 -- mcp_prompt_ledger and mcp_agent_runs gain application_id appended last.
 -- Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/137_ai_periods.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/137_ai_periods.sql
 
 BEGIN;
 

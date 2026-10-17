@@ -149,7 +149,7 @@ Any edit to one must be applied to the others in the same session.
 ## Two faces on one codebase (A2, 2026-09-22)
 
 `OS_HOST` (`os.<domain>`, super-admins and agents) and `APP_HOST` (`app.<domain>`, everyone's sign-in,
-`/launcher`, `/settings`) — `config/.env` for PHP, the `certstudy-web` drop-in for React; both empty = one face.
+`/launcher`, `/settings`) — `config/.env` for PHP, the `maludb-os-web` drop-in for React; both empty = one face.
 `web/lib/face.ts` + `web/middleware.ts` decide the face by Host and stamp `x-face`; `app/bootstrap.php`
 `os_face_gate()` refuses a non-super-admin under the os name (403; `/api/v1/session.php` and `/logout.php`
 exempt; action-token callers not judged). The bare name (`subello.com`, `www.`) is a static landing page, `/var/www/landing/` on its own
@@ -183,7 +183,7 @@ application access is the super-admin's alone; claims, feed `access[]` and run f
 `roles-and-rights.md`; HR db/012 (Employee, Manager, Payroll, HR Admin). Spec: `docs/build-specs/kernel-application-roles.md`.
 **Services for applications (K6/K7, 2026-09-28, db/161; spec `docs/build-specs/kernel-app-services.md`, proof `bin/test_app_services.php`, plugin 0.5.0 `sms-and-reads.md`):**
 `POST /api/v1/notify/sms.php` — an application texts a member (their verified phone, a grant, not opted out, 30/day) from the business's
-notification number (`bin/notify_endpoint_set.php`; none set → 503 `no_sender`), sent by `certstudy-channels`; the application never holds a
+notification number (`bin/notify_endpoint_set.php`; none set → 503 `no_sender`), sent by `maludb-os-channels`; the application never holds a
 Twilio key. `POST /api/v1/apps/read.php` — a consumer calls a provider's shared tool (`maludb-os.json` `shares[]` / `reads[]`, recorded by the
 installer) only over a connection a super-admin approved (`bin/app_connection.php`), per-site tools only at a site both serve (the provider
 gets its own `scope_id`). First share: Reservations' `covers_by_service`.
@@ -197,7 +197,7 @@ https://claude.ai/code/artifact/188ca1ea-efb5-480b-a9af-48339339f946):** a perso
 orchestrator that always delegates; the roster is a TREE (db/154: one parent per orchestrator, no cycles, depth ≤ 5; an assistant reaches only
 its person's departments; `agent_runs.delegation_reason`); agents message along the tree (db/155, `message_send`, `inbox_read`, the runner's
 message loop wakes a recipient; escalations to a person with an assistant go to the assistant); a person reaches their assistant on Telegram
-and SMS (db/156, `certstudy-channels` worker, `/channels/twilio/sms` webhook) and by email to the assistant's own MaluMail mailbox
+and SMS (db/156, `maludb-os-channels` worker, `/channels/twilio/sms` webhook) and by email to the assistant's own MaluMail mailbox
 (`seamus@subello.com`; MaluMail's mailbox MCP — `malumail_mcp()` — reads and sends, the OS holds no mailbox password; in by the signed
 webhook `/channels/malumail/mail` plus a once-a-minute poll of unread mail; replies thread); proposed leads (db/157,
 `/agents/org`). Seamus (34) is Edward's. MaluMail's host is reached by ssh (credentials in `/home/maludb/.env` — read single keys, never
@@ -251,14 +251,14 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
   PostgreSQL 17. Outside proxy: `subello.com` → :80. (`agentview.subello.com` → :3000 was the
   staging name; retired 2026-09-19 — the web app redirects it to `subello.com` until its proxy
   entry is removed.)
-  `certstudy-web` gets `API_BASE_URL=http://127.0.0.1:8080` from a systemd drop-in.
-- App DB: `certstudy` (roles `app_rw`, `app_records_ro`, `app_activity_ro`). App secrets:
+  `maludb-os-web` gets `API_BASE_URL=http://127.0.0.1:8080` from a systemd drop-in.
+- App DB: `maludb_os` (roles `app_rw`, `app_records_ro`, `app_activity_ro`). App secrets:
   `config/.env` (gitignored; group www-data must keep read access).
-- (Retired 2026-09-22 with the cut: `certstudy-pdf`, `certstudy-inbox-poll`, `certstudy-assistant`.) Tenant secrets: `app/secrets.php` / `mcp/secrets_store.py`, key
+- (Retired 2026-09-22 with the cut: `maludb-os-pdf`, `maludb-os-inbox-poll`, `maludb-os-assistant`.) Tenant secrets: `app/secrets.php` / `mcp/secrets_store.py`, key
   `SECRETS_KEY` in `config/.env` — never replace it, rotation ADDS a version.
-- Services (systemd): `certstudy-records-mcp` (8811), `certstudy-activity-mcp` (8812),
-  `certstudy-actions-mcp` (8813), `certstudy-memory-mcp` (8814), `certstudy-agent-runner` (8815/8816), all from `mcp/venv`;
-  `certstudy-activity-ingest.timer` runs `mcp/activity_ingest.py` every minute.
+- Services (systemd): `maludb-os-records-mcp` (8811), `maludb-os-activity-mcp` (8812),
+  `maludb-os-actions-mcp` (8813), `maludb-os-memory-mcp` (8814), `maludb-os-agent-runner` (8815/8816), all from `mcp/venv`;
+  `maludb-os-activity-ingest.timer` runs `mcp/activity_ingest.py` every minute.
 - Cron: installed for `www-data` from `docs/deploy/crontab.example`.
 - First organizer is member #1 (the project owner's account).
 
@@ -267,7 +267,7 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
 - MaluDB = `maludb_core` Postgres extension + the MaluDB API service
   (`maludb-api.service`, port 8000, code at `/home/maludb/maludb-python-api-server`).
 - **The `maludb` database is only the extension's bootstrap — never a tenant.** Each tenant
-  gets its own memory database: ours is `certstudy_memory` (schema+role `certstudy_mem`,
+  gets its own memory database: ours is `maludb_os_memory` (schema+role `maludb_os_mem`,
   executor access granted via `maludb_core.grant_memory_access`).
 - API tokens are minted by proving the tenant's Postgres login: `POST /v1/tokens`.
   Our token + role creds live in `config/.env` (`MALUDB_*` keys).
@@ -411,8 +411,8 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
   empty ports, a migration ledger). Fixed there the same day: `bos-init` applies the kernel's new migrations at every boot (it was once
   only), and under `https` it writes no loopback `/etc/hosts` line for an application's name (the runner dials the registered
   `https://<label>.<domain>/mcp/…`; a loopback line sent that to 127.0.0.1:443) — agents reach an application only through the owner's DNS/TLS.
-- Migrations: `sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/NNN_*.sql`
-- Service check: `systemctl status 'certstudy-*'`
+- Migrations: `sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/NNN_*.sql`
+- Service check: `systemctl status 'maludb-os-*'`
 - MCP smoke test: mint token `php bin/mint_mcp_token.php --email ... --label ...`, then POST
   an MCP initialize to `http://localhost/mcp/records` with `Authorization: Bearer <token>`.
-- Ingestion check: `sudo systemctl start certstudy-activity-ingest.service && journalctl -u certstudy-activity-ingest -n 2`
+- Ingestion check: `sudo systemctl start maludb-os-activity-ingest.service && journalctl -u maludb-os-activity-ingest -n 2`

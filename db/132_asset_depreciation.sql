@@ -8,7 +8,7 @@
 -- credit 1510 Accumulated depreciation.
 --
 -- Additive. Run as postgres:
---   sudo -u postgres psql -v ON_ERROR_STOP=1 -d certstudy -f db/132_asset_depreciation.sql
+--   sudo -u postgres psql -v ON_ERROR_STOP=1 -d maludb_os -f db/132_asset_depreciation.sql
 
 BEGIN;
 
