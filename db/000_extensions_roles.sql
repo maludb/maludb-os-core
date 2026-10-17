@@ -1,5 +1,5 @@
 -- 000_extensions_roles.sql
--- Cert Study Tracker — extensions, database roles, and the RLS request context.
+-- MaluDB OS — extensions, database roles, and the RLS request context.
 -- PostgreSQL 17. Run first; every later file depends on the roles and helpers here.
 --
 -- Two-memory architecture (see docs/plan.md §6 and the mcp-servers skill):

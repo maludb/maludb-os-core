@@ -1,5 +1,5 @@
 [Unit]
-Description=Cert Study Tracker — records MCP server (read-only, localhost:8811)
+Description=MaluDB OS — records MCP server (read-only, localhost:8811)
 After=network.target postgresql.service
 Wants=postgresql.service
 

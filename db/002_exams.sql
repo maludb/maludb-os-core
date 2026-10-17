@@ -9,7 +9,7 @@ BEGIN;
 -- --------------------------------------------------------------------------
 CREATE TABLE community_settings (
     id                  boolean PRIMARY KEY DEFAULT true CHECK (id),  -- enforces a single row
-    community_name      text NOT NULL DEFAULT 'Cert Study Tracker',
+    community_name      text NOT NULL DEFAULT 'MaluDB OS',
     timezone            text NOT NULL DEFAULT 'UTC',                  -- default display tz for community events
 
     -- Retake policy (plan §3.3) — editable without a schema change.
