@@ -1,4 +1,4 @@
-# Cert Study Tracker — Plan
+# MaluDB OS — Plan
 
 Status: **COMPLETE — Phases 0–4 all done. The full application is built, verified, and live at members.aimasters.vip.** · Started 2026-09-13 · Updated 2026-09-15
 

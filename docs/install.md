@@ -421,7 +421,7 @@ cd /var/www/mcp && sudo -u bos-runner env RUNNER_ENV_FILE=/etc/business-os/runne
 
 Sign in at `https://os.$DOMAIN` (or through the loopback entry) as the super-admin and set the business
 name, time zone and currency at **Settings → Business** (`/settings/business`); the seed says
-"Cert Study Tracker", UTC, USD. Upload the logo there too.
+"MaluDB OS", UTC, USD. Upload the logo there too.
 
 ### 10.4 Cron
 
