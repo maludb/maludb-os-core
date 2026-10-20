@@ -253,7 +253,10 @@ answers in `docs/build-specs/stub-modules-decisions.md`. Rules that outlive the 
   entry is removed.)
   `maludb-os-web` gets `API_BASE_URL=http://127.0.0.1:8080` from a systemd drop-in.
 - App DB: `maludb_os` (roles `app_rw`, `app_records_ro`, `app_activity_ro`). App secrets:
-  `config/.env` (gitignored; group www-data must keep read access).
+  `config/.env` (gitignored; group www-data must keep read access). **On this host the databases keep their old names —
+  `certstudy` and `certstudy_memory` (`DB_NAME`/`MALUDB_MEMORY_*` in `config/.env`, `RUNNER_DB_NAME` in the runner's env): run
+  migrations with `-d certstudy` here.** The units were renamed to `maludb-os-*` on 2026-10-20 (the old unit files are in
+  `/root/certstudy-units-backup-2026-10-20/`); the four retired `certstudy-*` units stay disabled under their old names.
 - (Retired 2026-09-22 with the cut: `maludb-os-pdf`, `maludb-os-inbox-poll`, `maludb-os-assistant`.) Tenant secrets: `app/secrets.php` / `mcp/secrets_store.py`, key
   `SECRETS_KEY` in `config/.env` — never replace it, rotation ADDS a version.
 - Services (systemd): `maludb-os-records-mcp` (8811), `maludb-os-activity-mcp` (8812),
