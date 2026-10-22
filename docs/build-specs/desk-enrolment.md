@@ -1,8 +1,9 @@
 # Desk enrolment — a MaluOS desktop joins the estate (stage D2, the kernel half)
 
 2026-10-22 · Business OS build plan, phase 6 "Desktop beta", item 2, and `docs/desktop-agent-plan.md`
-stage D2. **Spec for the owner's approval: schema, endpoints and the allow-list together. No PHP is
-written until then (the checkpoint gate).** The desk half is built in MaluOS
+stage D2. **Approved by the owner 2026-10-22 and built the same day** (db/187, `app/features/estate/desks.php`,
+`html/api/v1/desks/`, `html/settings/desks/code.php` + the Desks section of Settings, `bin/mint_desk_code.php`,
+`bin/cron/desk_presence.php`; proof `php bin/test_desk_enrolment.php`, 39 checks on the internal port — `BOS_INTERNAL_URL` names it when it is not :8080). The desk half is built in MaluOS
 (`maluos-desk`, `maluctl office`; contract `docs/desk-enrolment.md` there) and proven against a mock
 office that implements this spec.
 
@@ -22,7 +23,7 @@ The desk acts as the person: the desk token reads what the person's own `mcp` to
 ## Schema (one migration, additive)
 
 ```sql
--- db/187_desk_enrolment.sql   (db/185 is reserved for the forge's K61, db/186 is K65; take the next free number at build time)
+-- db/187_desk_enrolment.sql   (db/185 is reserved for the forge's K61, db/186 is K65)
 ALTER TABLE mcp_access_tokens DROP CONSTRAINT mcp_access_tokens_scope_check;
 ALTER TABLE mcp_access_tokens ADD CONSTRAINT mcp_access_tokens_scope_check
     CHECK (scope IN ('mcp', 'api', 'application', 'desk'));
@@ -71,17 +72,22 @@ decision (short-lived desk-session keys, rate limits, `surface = desk` on the le
 specified separately once this half is approved. The desk side already treats `null` as "not
 published" and makes no gateway rung.
 
-`api_authenticate()` (`app/api/bootstrap.php`) accepts `scope = 'desk'` only for these four
-endpoints; `mcp/server_common.py` accepts a desk token on the records and activity servers as the
-owner (the same member, `source desk` on the read's activity row). An `api` or `mcp` token is
-refused on `/api/v1/desks/*`, as a desk token is refused elsewhere: one revocation never means
-two surfaces (db/078's rule).
+The four endpoints authenticate with `desk_authenticate()` (`app/features/estate/desks.php`), which
+accepts `scope = 'desk'` only; `api_authenticate()` keeps `scope = 'api'`, so an `api` or `mcp` token is
+refused on `/api/v1/desks/*` and a desk token on `/api/v1/me`: one revocation never means two surfaces
+(db/078's rule). The records and activity MCP servers resolve bearer tokens through `mcp_resolve_token()`,
+which takes any live token regardless of scope (db/014) — a desk token reads there as its owner with no
+change. **As built:** the desk token is also accepted by `/mcp/*` for an `api` token's reasons; the
+per-surface refusal on the MCP servers is a later tightening that would touch personal and application
+tokens too.
 
 ## The code
 
-`POST /api/v1/desks/codes` is **not** an endpoint: minting is a screen (`/settings` → "Enrol a
-desk", the person's own) and a CLI for operators, `php bin/mint_desk_code.php --email
-ed@example.com [--name "Ed's desk"]`. Eight characters from an unambiguous alphabet, shown once
+`POST /api/v1/desks/codes` is **not** an endpoint: minting is a screen (`/settings?section=desks` →
+"Enrol a desk", the person's own; `html/settings/desks/code.php` answers the code once, through
+`settingsSecret()` like a new token) and a CLI for operators, `php bin/mint_desk_code.php --email
+ed@example.com [--name "Ed's desk"]`. The Desks section lists the person's live desks with presence and
+a Retire button (`locations/retire.php`, the owner's own action). Eight characters from an unambiguous alphabet, shown once
 with its expiry; one live code per person at a time (minting again replaces it). A used or expired
 code is `403 bad_code`; the message never says which.
 
@@ -108,6 +114,12 @@ session ends; the job is for desks that lost power.
 - `maluctl office leave` retires the desk and revokes the token; a later heartbeat with the old
   token is 401.
 - A desk token presented to `/api/v1/me` or `/mcp/actions` is refused.
+
+## Deploy
+
+`db/187` as postgres; `docs/deploy/apache-react-cutover.conf` (the two `desks` rewrite lines) and a reload;
+`docs/deploy/crontab.example` (the presence job); `npm run build` for the Desks section. A MaluOS office
+picks all of it up when the kernel package is re-vendored at this commit.
 
 ## Not in this slice
 
