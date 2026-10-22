@@ -22,7 +22,7 @@ The desk acts as the person: the desk token reads what the person's own `mcp` to
 ## Schema (one migration, additive)
 
 ```sql
--- db/185_desk_enrolment.sql
+-- db/187_desk_enrolment.sql   (db/185 is reserved for the forge's K61, db/186 is K65; take the next free number at build time)
 ALTER TABLE mcp_access_tokens DROP CONSTRAINT mcp_access_tokens_scope_check;
 ALTER TABLE mcp_access_tokens ADD CONSTRAINT mcp_access_tokens_scope_check
     CHECK (scope IN ('mcp', 'api', 'application', 'desk'));
