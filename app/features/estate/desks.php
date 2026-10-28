@@ -28,33 +28,34 @@ function desk_code_normalize(string $raw): string
  * Mint a code for $memberId: eight characters, fifteen minutes, one use. A person has one live code
  * at a time — minting again expires the earlier one. @return array{code:string,expires_at:string,id:int}
  */
-function desk_code_mint(PDO $pdo, int $memberId, ?string $deskName, int $createdBy): array
+function desk_code_mint(PDO $pdo, int $memberId, ?string $deskName, int $createdBy, string $kind = 'desk'): array
 {
-    $pdo->prepare('UPDATE desk_enrollment_codes SET expires_at = now() WHERE member_id = :m AND used_at IS NULL AND expires_at > now()')
-        ->execute(['m' => $memberId]);
+    // db/188: a code is minted for a kind; a node code (server, inference) is the operator's, and they may hold one per kind.
+    $pdo->prepare('UPDATE desk_enrollment_codes SET expires_at = now() WHERE member_id = :m AND kind = :k AND used_at IS NULL AND expires_at > now()')
+        ->execute(['m' => $memberId, 'k' => $kind]);
     $code = '';
     for ($i = 0; $i < 8; $i++) {
         $code .= DESK_CODE_ALPHABET[random_int(0, strlen(DESK_CODE_ALPHABET) - 1)];
     }
     $st = $pdo->prepare(<<<'SQL'
-        INSERT INTO desk_enrollment_codes (member_id, code_hash, desk_name, expires_at, created_by)
-        VALUES (:m, :h, :n, now() + make_interval(secs => :ttl), :b)
+        INSERT INTO desk_enrollment_codes (member_id, code_hash, desk_name, expires_at, created_by, kind)
+        VALUES (:m, :h, :n, now() + make_interval(secs => :ttl), :b, :k)
         RETURNING id, expires_at
     SQL);
-    $st->execute(['m' => $memberId, 'h' => hash('sha256', $code), 'n' => $deskName !== '' ? $deskName : null, 'ttl' => DESK_CODE_TTL_S, 'b' => $createdBy]);
+    $st->execute(['m' => $memberId, 'h' => hash('sha256', $code), 'n' => $deskName !== '' ? $deskName : null, 'ttl' => DESK_CODE_TTL_S, 'b' => $createdBy, 'k' => $kind]);
     $row = $st->fetch();
     return ['code' => substr($code, 0, 4) . '-' . substr($code, 4), 'expires_at' => (string) $row['expires_at'], 'id' => (int) $row['id']];
 }
 
-/** The live, unused, unexpired code row for $raw, locked for this transaction, or null. */
-function desk_code_take(PDO $pdo, string $raw): ?array
+/** The live, unused, unexpired code row for $raw of one of $kinds (db/188: a desk code enrols only a desk), locked for this transaction, or null. */
+function desk_code_take(PDO $pdo, string $raw, array $kinds = ['desk']): ?array
 {
     $norm = desk_code_normalize($raw);
     if (strlen($norm) !== 8) {
         return null;
     }
-    $st = $pdo->prepare('SELECT * FROM desk_enrollment_codes WHERE code_hash = :h AND used_at IS NULL AND expires_at > now() FOR UPDATE');
-    $st->execute(['h' => hash('sha256', $norm)]);
+    $st = $pdo->prepare('SELECT * FROM desk_enrollment_codes WHERE code_hash = :h AND kind = ANY(:kinds) AND used_at IS NULL AND expires_at > now() FOR UPDATE');
+    $st->execute(['h' => hash('sha256', $norm), 'kinds' => '{' . implode(',', $kinds) . '}']);
     $row = $st->fetch();
     return $row === false ? null : $row;
 }
@@ -251,13 +252,20 @@ function desk_body(): array
     return is_array($body) ? $body : [];
 }
 
-/** What this office publishes to desks. memory, actions and models stay null until their own slice. */
-function desk_endpoints(): array
+/** Who reads the estate and mints node codes (db/188): the business's super-admins, the system managers of Phase 13 slice 1. */
+function estate_operator(?array $member): bool
+{
+    return $member !== null && ($member['business_role'] ?? '') === 'super_admin' && ($member['status'] ?? '') === 'active';
+}
+
+/** What this office publishes to desks. memory, actions and models stay null until their own slice; estate (db/188) to an operator's desk. */
+function desk_endpoints(?array $member = null): array
 {
     return [
         'heartbeat' => app_url('/api/v1/desks/heartbeat'), 'me' => app_url('/api/v1/desks/me'), 'leave' => app_url('/api/v1/desks/leave'),
         'records' => app_url('/mcp/records'), 'activity' => app_url('/mcp/activity'),
         'memory' => null, 'actions' => null, 'models' => null,
+        'estate' => estate_operator($member) ? app_url('/api/v1/desks/estate') : null,
     ];
 }
 
@@ -270,7 +278,7 @@ function desk_answer(PDO $pdo, array $desk, array $member): array
                    'presence' => (string) $desk['presence'], 'last_seen_at' => json_ts($desk['last_seen_at'] ?? null)],
         'office' => ['name' => business_name($pdo), 'url' => app_url('/')],
         'owner' => ['member_id' => (int) $member['id'], 'email' => (string) $member['email'], 'display_name' => (string) $member['display_name']],
-        'endpoints' => desk_endpoints(), 'heartbeat_s' => DESK_HEARTBEAT_S,
+        'endpoints' => desk_endpoints($member), 'heartbeat_s' => DESK_HEARTBEAT_S,
     ];
 }
 
