@@ -176,6 +176,7 @@ function desk_retire(PDO $pdo, int $id): void
     $pdo->prepare("UPDATE locations SET status = 'retired', retired_at = COALESCE(retired_at, now()), presence = 'offline', updated_at = now() WHERE id = :id")
         ->execute(['id' => $id]);
     desk_revoke_tokens($pdo, $id);
+    overlay_free($pdo, $id);      // db/189: its overlay address into quarantine
 }
 
 function desk_heartbeat(PDO $pdo, int $id, string $presence, array $body): void
@@ -272,13 +273,16 @@ function desk_endpoints(?array $member = null): array
 /** The contract's answer for heartbeat, me and (with the token added by the caller) enroll. */
 function desk_answer(PDO $pdo, array $desk, array $member): array
 {
+    $overlay = overlay_block($pdo, $desk);      // db/189: the desk's place on the estate's network, or null
+    $endpoints = desk_endpoints($member);
+    $endpoints['overlay'] = $overlay !== null ? app_url('/api/v1/desks/overlay') : null;
     return [
         'ok' => true, 'surface' => DESK_SURFACE,
         'desk' => ['id' => (int) $desk['id'], 'name' => (string) $desk['name'], 'status' => (string) $desk['status'],
                    'presence' => (string) $desk['presence'], 'last_seen_at' => json_ts($desk['last_seen_at'] ?? null)],
         'office' => ['name' => business_name($pdo), 'url' => app_url('/')],
         'owner' => ['member_id' => (int) $member['id'], 'email' => (string) $member['email'], 'display_name' => (string) $member['display_name']],
-        'endpoints' => desk_endpoints($member), 'heartbeat_s' => DESK_HEARTBEAT_S,
+        'endpoints' => $endpoints, 'heartbeat_s' => DESK_HEARTBEAT_S, 'overlay' => $overlay,
     ];
 }
 
@@ -307,3 +311,6 @@ function present_desk(array $l): array
         'app_version' => $l['app_version'] !== null ? (string) $l['app_version'] : null,
     ];
 }
+
+// db/189: the overlay's functions (desk_answer and desk_retire call them); loaded last so the circular require is harmless.
+require_once __DIR__ . '/overlay.php';

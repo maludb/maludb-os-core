@@ -108,6 +108,7 @@ function node_retire(PDO $pdo, int $id): void
         ->execute(['id' => $id]);
     node_revoke_tokens($pdo, $id);
     $pdo->prepare('UPDATE estate_alerts SET cleared_at = now() WHERE location_id = :id AND cleared_at IS NULL')->execute(['id' => $id]);
+    overlay_free($pdo, $id);      // db/189: its overlay address into quarantine; a hub leaving unsets the hub
 }
 
 // --------------------------------------------------------------------------
@@ -289,21 +290,23 @@ function node_authenticate(): array
     return ['token' => $token, 'node' => $node, 'member' => $member];
 }
 
-function node_endpoints(): array
+function node_endpoints(bool $overlay = false): array
 {
     return ['heartbeat' => app_url('/api/v1/estate/heartbeat'), 'me' => app_url('/api/v1/estate/me'),
-            'leave' => app_url('/api/v1/estate/leave'), 'nodes' => app_url('/api/v1/estate/nodes')];
+            'leave' => app_url('/api/v1/estate/leave'), 'nodes' => app_url('/api/v1/estate/nodes'),
+            'overlay' => $overlay ? app_url('/api/v1/estate/overlay') : null];
 }
 
 /** The contract's answer for join (with the token and enrolled_by added by the caller), heartbeat and me. */
 function node_answer(PDO $pdo, array $node): array
 {
+    $overlay = overlay_block($pdo, $node);      // db/189
     return [
         'ok' => true, 'surface' => DESK_SURFACE,
         'node' => ['id' => (int) $node['id'], 'kind' => (string) $node['kind'], 'name' => (string) $node['name'], 'status' => (string) $node['status'],
                    'presence' => (string) $node['presence'], 'last_seen_at' => json_ts($node['last_seen_at'] ?? null), 'last_report_at' => json_ts($node['last_report_at'] ?? null)],
         'office' => ['name' => business_name($pdo), 'url' => app_url('/')],
-        'endpoints' => node_endpoints(), 'heartbeat_s' => NODE_HEARTBEAT_S, 'report_s' => NODE_REPORT_S,
+        'endpoints' => node_endpoints($overlay !== null), 'heartbeat_s' => NODE_HEARTBEAT_S, 'report_s' => NODE_REPORT_S, 'overlay' => $overlay,
     ];
 }
 
@@ -370,6 +373,8 @@ function present_node_row(array $n, array $openAlerts, bool $full = false): arra
                     'memory_mb' => $n['memory_mb'] !== null ? (int) $n['memory_mb'] : null, 'storage_gb' => $n['storage_gb'] !== null ? (int) $n['storage_gb'] : null,
                     'app_version' => $n['app_version'] ?? null, 'components' => $n['components'] !== null ? array_values(array_filter(array_map(static fn ($c) => trim($c, '"'), explode(',', trim((string) $n['components'], '{}'))))) : []],
         'enrolled_at' => json_ts($n['enrolled_at'] ?? null),
+        // db/189: the node's place on the overlay, or null
+        'overlay' => ($n['overlay_address'] ?? null) !== null && ($n['overlay_address_freed_at'] ?? null) === null ? ['address' => (string) $n['overlay_address']] : null,
     ];
     if ($full) {
         $row['report'] = $rep !== [] ? $rep : null;
@@ -382,7 +387,8 @@ function present_desk_row(array $d): array
     return ['id' => (int) $d['id'], 'kind' => 'desk', 'name' => (string) $d['name'], 'owner' => ['display_name' => (string) ($d['owner_name'] ?? '')],
             'presence' => (string) $d['presence'], 'last_seen_at' => json_ts($d['last_seen_at'] ?? null),
             'health' => $d['status'] !== 'active' ? 'retired' : ($d['presence'] === 'online' ? 'ok' : 'offline'), 'summary' => (string) $d['presence'],
-            'facts' => ['hostname' => $d['hostname'] ?? null, 'os_release' => $d['operating_system'] ?? null, 'app_version' => $d['app_version'] ?? null]];
+            'facts' => ['hostname' => $d['hostname'] ?? null, 'os_release' => $d['operating_system'] ?? null, 'app_version' => $d['app_version'] ?? null],
+            'overlay' => ($d['overlay_address'] ?? null) !== null && ($d['overlay_address_freed_at'] ?? null) === null ? ['address' => (string) $d['overlay_address']] : null];
 }
 
 /** Open alerts, and those cleared in the last hour, newest first; by node when $nodeId. @return array<int,array> */
@@ -424,5 +430,6 @@ function present_estate_for_settings(PDO $pdo): array
 {
     $ans = estate_nodes_answer($pdo);
     return ['nodes' => array_values(array_filter($ans['nodes'], static fn ($n) => $n['kind'] !== 'desk')),
-            'alerts' => array_values(array_filter($ans['alerts'], static fn ($a) => $a['cleared_at'] === null))];
+            'alerts' => array_values(array_filter($ans['alerts'], static fn ($a) => $a['cleared_at'] === null)),
+            'overlay' => present_overlay_for_settings($pdo)];
 }

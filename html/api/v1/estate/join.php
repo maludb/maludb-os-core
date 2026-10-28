@@ -47,7 +47,16 @@ try {
     error_log('estate join failed: ' . $ex->getMessage());
     api_error('server_error', 'The node could not join.', 500);
 }
-$node = $made['node'];
+// db/189: the node's place on the overlay (its WireGuard key in the body); --hub makes it the hub.
+$oerr = overlay_join($pdo, (int) $made['node']['id'], $body);
+if ($oerr === 'hub_exists') {
+    $pdo->rollBack();
+    api_error('hub_exists', 'The estate already has a hub; it must leave before another joins as the hub.', 409);
+} elseif ($oerr !== null) {
+    $pdo->rollBack();
+    api_error('invalid', 'overlay_hub.endpoint is host:port.', 400);
+}
+$node = node_row($pdo, (int) $made['node']['id']);
 log_activity($pdo, 'node.join', 'location', (int) $node['id'], ['source' => 'node',
     'after' => ['name' => $node['name'], 'kind' => $node['kind'], 'hostname' => $node['hostname'], 'app_version' => $node['app_version'], 'principal' => $principal]]);
 $pdo->commit();

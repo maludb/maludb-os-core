@@ -29,5 +29,7 @@ if (isset($body['report']) && strlen(json_encode($body['report'], JSON_UNESCAPED
 $pdo = db();
 $pdo->beginTransaction();
 node_heartbeat($pdo, $ctx['node'], $presence, $body);
+$row = node_row($pdo, (int) $ctx['node']['id']);
+$changed = overlay_changed($pdo, $row);      // db/189: the overlay changed since this node last heard
 $pdo->commit();
-api_json(node_answer($pdo, node_row($pdo, (int) $ctx['node']['id'])));
+api_json(node_answer($pdo, $row) + ['overlay_changed' => $changed]);

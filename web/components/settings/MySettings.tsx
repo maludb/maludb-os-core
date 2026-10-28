@@ -363,12 +363,20 @@ function Estate({ estate, timeZone }: { estate: NonNullable<Data["estate"]>; tim
   return (
     <div className="mt-4" id="settings-estate">
       <h6 className="fw-bold">The estate</h6>
+      {estate.overlay && (
+        <p className="text-muted small" id="settings-estate-overlay">
+          {/* db/189: the estate's own network (maluos docs/phase13-slice1b-overlay.md) */}
+          Overlay network {estate.overlay.range}{estate.overlay.hub
+            ? <>, hub <Link href={`/locations/${estate.overlay.hub.id}`}>{estate.overlay.hub.name}</Link> at {estate.overlay.hub.endpoint} ({estate.overlay.hub.address}), {estate.overlay.members} member{estate.overlay.members === 1 ? "" : "s"} with an address.</>
+            : <>: no hub yet — join the coordinator&apos;s own host with <code>sudo maluctl estate join … --hub HOST:51820</code> and every member gets its tunnel.</>}
+        </p>
+      )}
       <div className="table-responsive">
         <table className="table table-hover mb-3">
-          <thead className="thead-light"><tr><th>Node</th><th>Kind</th><th>Health</th><th>Summary</th><th>Units</th><th>Agents</th><th>Disk</th><th>Last report</th></tr></thead>
+          <thead className="thead-light"><tr><th>Node</th><th>Kind</th><th>Health</th><th>Summary</th><th>Units</th><th>Agents</th><th>Disk</th><th>Overlay</th><th>Last report</th></tr></thead>
           <tbody>
             {estate.nodes.length === 0 ? (
-              <tr><td colSpan={8} className="text-muted text-center py-3">No nodes yet. Make a node code above and run the command it shows on the server.</td></tr>
+              <tr><td colSpan={9} className="text-muted text-center py-3">No nodes yet. Make a node code above and run the command it shows on the server.</td></tr>
             ) : estate.nodes.map((n) => (
               <tr id={`node-${n.id}`} key={n.id}>
                 <td><Link href={`/locations/${n.id}`}>{n.name}</Link>{n.hostname && n.hostname !== n.name && <small className="text-muted"> · {n.hostname}</small>}</td>
@@ -378,6 +386,7 @@ function Estate({ estate, timeZone }: { estate: NonNullable<Data["estate"]>; tim
                 <td><small>{n.units.up} up{n.units.down > 0 && <span className="text-danger">, {n.units.down} down</span>}</small></td>
                 <td><small>{n.agents.running}/{n.agents.count}{n.agents.failed > 0 && <span className="text-danger">, {n.agents.failed} failed</span>}</small></td>
                 <td><small>{n.disk_max_pct !== null ? `${n.disk_max_pct} %` : "—"}</small></td>
+                <td><small>{n.overlay ? n.overlay.address : "—"}</small></td>
                 <td>{n.last_report_at ? formatDate(n.last_report_at, timeZone) : <small className="text-muted">never</small>}</td>
               </tr>
             ))}
