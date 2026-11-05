@@ -862,10 +862,15 @@ if ($appId > 0 && $APPLY) {
         $appRow = $pdo->query('SELECT * FROM applications WHERE id = ' . $appId)->fetch();
         $member = $pdo->query('SELECT * FROM members WHERE id = ' . $byId)->fetch();
         $launch = sso_launch_url($pdo, $appRow, $member, 'admin', sso_member_holding($pdo, $appId, $byId));
-        $ch = curl_init($launch);
+        // The proof dials this host directly. Under --scheme https the vhost still listens on :80 behind the owner's TLS
+        // proxy (nothing answers 127.0.0.1:443), so the launch is replayed over http with X-Forwarded-Proto, as the proxy
+        // would send it; the application sees an https request either way.
+        $probeUrl = $scheme === 'https' ? preg_replace('#^https://#', 'http://', $launch) : $launch;
+        $ch = curl_init($probeUrl);
         $jar = tempnam(sys_get_temp_dir(), 'sso');
         curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8, CURLOPT_COOKIEJAR => $jar, CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_RESOLVE => [$fqdn . ':80:127.0.0.1', $fqdn . ':443:127.0.0.1']]);
+            CURLOPT_RESOLVE => [$fqdn . ':80:127.0.0.1', $fqdn . ':443:127.0.0.1'],
+            CURLOPT_HTTPHEADER => $scheme === 'https' ? ['X-Forwarded-Proto: https'] : []]);
         curl_exec($ch);
         $first = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         curl_setopt($ch, CURLOPT_COOKIEJAR, tempnam(sys_get_temp_dir(), 'sso'));
