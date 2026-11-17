@@ -143,3 +143,23 @@ html.app-header-dark .nxl-navigation .m-header .logo-lg,
    primary…dark and none called brand, so those badges rendered as white text on nothing. */
 .bg-soft-brand { background-color: rgba(52, 84, 209, .075) !important; }
 .text-brand { color: #3454d1 !important; }
+
+/* Dropdowns in dark mode. The theme makes a select's text white on a transparent field, but the
+   option list is drawn by the browser on its own canvas, which stays light unless the page says it
+   is dark: white options on white, unreadable on every select of every screen. Tell the browser the
+   skin is dark (native popups, date pickers and scrollbars follow it), give the options the menus'
+   surface, and draw Bootstrap 5.2's caret, a fixed dark stroke, in the theme's muted light tone. */
+html.app-skin-dark {
+    color-scheme: dark;
+}
+html.app-skin-dark select option,
+html.app-skin-dark select optgroup {
+    background-color: #0f172a;
+    color: #fff;
+}
+html.app-skin-dark select option:disabled {
+    color: #8a94a6;
+}
+html.app-skin-dark .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23b1b4c0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
