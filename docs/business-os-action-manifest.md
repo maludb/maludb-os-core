@@ -189,7 +189,7 @@ Screens:
 | `locations-list` | `/locations/` | Work Locations: the whole estate — every building, the offices inside each, desks, who's online, and the sites the business trades from (params: `kind`, `parent`, `online`) |
 | `location-add` | `/locations/new` | to add a building, an office (VM) or a desk (params: `kind`, `parent`) |
 | `location-edit` | `/locations/{id}/edit` | to edit a location's name, parent, description or specs |
-| `location-view` | `/locations/{id}` | one location: specs, residents, office manager, applications, departments, queue |
+| `location-view` | `/locations/{id}` | one location: specs, residents, office manager, applications, departments, queue; for a server or inference node, its health over a day, a week or thirty days (params: `health`) |
 | `location-tasks` | `/locations/tasks` | cross-location tasks (params: `mine`, `target`, `status`) |
 | `location-task-add` | `/locations/tasks/new` | to ask another location to do something (params: `target`, `task_type`) |
 | `location-task-view` | `/locations/tasks/{id}` | one task's status and result |

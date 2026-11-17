@@ -350,8 +350,10 @@
             "screen": "location-view",
             "url": "/locations/{id}",
             "section": "Estate: buildings, offices & desks (and the task queue)",
-            "when": "one location: specs, residents, office manager, applications, departments, queue",
-            "params": [],
+            "when": "one location: specs, residents, office manager, applications, departments, queue; for a server or inference node, its health over a day, a week or thirty days",
+            "params": [
+                "health"
+            ],
             "built": true,
             "stub": false
         },

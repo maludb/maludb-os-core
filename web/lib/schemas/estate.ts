@@ -52,9 +52,28 @@ export const locationView = z.object({
     agents: z.array(named),
     buildings: z.array(named),
   }),
-  can: z.object({ retire: z.boolean(), delete: z.boolean() }),
+  can: z.object({ retire: z.boolean(), delete: z.boolean(), health: z.boolean().default(false) }),
   delete_blockers: z.array(z.string()),
 });
+
+/** The Health card of location-view — app/features/estate/health.php (GET /locations/health.php). */
+const healthPoint = z.tuple([z.number(), z.number()]);
+export const nodeHealth = z.object({
+  location_id: id,
+  hours: id,
+  windows: z.array(id),
+  sampled_every_s: id,
+  from: z.number(),
+  to: z.number(),
+  sample_count: id,
+  panels: z.array(z.object({
+    key: z.string(),
+    label: z.string(),
+    series: z.array(z.object({ key: z.string(), label: z.string(), unit: z.string(), points: z.array(healthPoint) })),
+  })),
+  alerts: z.array(z.object({ id, ts: z.string().nullable(), kind: z.string(), key: z.string(), severity: z.string(), title: z.string() })),
+});
+export type NodeHealth = z.infer<typeof nodeHealth>;
 
 export const locationFormData = z.object({
   location: z.object({

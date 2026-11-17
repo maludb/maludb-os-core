@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import DeleteLocation from "@/components/estate/DeleteLocation";
+import NodeHealthCard from "@/components/estate/NodeHealthCard";
 import { KindBadge, PresenceBadge } from "@/components/estate/LocationBadges";
 import ActionForm from "@/components/kit/ActionForm";
 import AgentViewButton from "@/components/kit/AgentViewButton";
@@ -21,9 +22,18 @@ const KIND_ICON: Record<string, string> = { building: "feather-server", office: 
  * so every card here is a plain `.card` (the stacked-card rule — the PHP template stretches them
  * all, which is the same defect the company page had).
  */
-export default async function LocationPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function LocationPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id: rawId } = await params;
   if (!/^\d+$/.test(rawId)) notFound();
+  // The Health card's window (?health=24|168|720); PHP holds any other number to the nearest.
+  const rawHealth = (await searchParams).health;
+  const healthHours = typeof rawHealth === "string" && /^\d{1,4}$/.test(rawHealth) ? Number(rawHealth) : 24;
 
   const here = await herePath();
   return renderScreen(`/locations/${rawId}`, locationView, (data) => {
@@ -300,6 +310,13 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
               )}
             </div>
           </div>
+          {can.health && (
+            <div className="row">
+              <div className="col-12">
+                <NodeHealthCard locationId={id} hours={healthHours} path={`/locations/${id}`} />
+              </div>
+            </div>
+          )}
         </div>
       </>
     );

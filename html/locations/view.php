@@ -19,6 +19,7 @@ log_screen_view($pdo, 'location-view');
 if (wants_json()) {
     require_once dirname(__DIR__, 2) . '/app/features/estate/present.php';
     require_once dirname(__DIR__, 2) . '/app/features/records/present.php';
+    require_once dirname(__DIR__, 2) . '/app/features/estate/health.php';
     $isDesk = $location['kind'] === 'desk';
     $isOwner = $isDesk && (int) ($location['owner_member_id'] ?? 0) === (int) current_member_id();
     $blockers = is_super_admin() ? location_delete_blockers($pdo, $id) : [];
@@ -45,6 +46,8 @@ if (wants_json()) {
         'can' => [
             'retire' => $location['status'] === 'active' && (($isDesk && $isOwner) || is_super_admin()),
             'delete' => is_super_admin(),
+            // The Health card (GET /locations/health.php): a server or an inference node, to an operator or IT.
+            'health' => in_array($location['kind'], NODE_KINDS, true) && health_reader($pdo, current_member()),
         ],
         'delete_blockers' => array_values($blockers),
     ]);
